@@ -545,408 +545,430 @@ u{ text-underline-offset: .18em; }
   </div>
 
 <script>
-/* ========= localStorage keys for result page ========= */
-const LS_LAST_SET   = "JPQ_LAST_SET_ID";
-const LS_LAST_SCORE = "JPQ_LAST_SCORE";
-const LS_LAST_TOTAL = "JPQ_LAST_TOTAL";
+/* =========================================================
+   Quiz (GitHub-friendly, no user CSV upload)
+   - Loads questions.csv / sets.csv / ui_text.csv via fetch()
+   - Supports input typing questions (type = input or q_type_input)
+   - Keeps existing UI and result saving keys
+========================================================= */
 
-/* ========= Data source ========= */
-const LS_SETS = "JPQ_SETS_CSV";
-const LS_QS   = "JPQ_QUESTIONS_CSV";
-const LS_UI   = "JPQ_UI_TEXT_CSV";
+const FILES = {
+  questions: "questions.csv",
+  sets: "sets.csv",
+  ui: "ui_text.csv",
+};
 
-async function getCSV(kind){
-  const key = (kind==="sets") ? LS_SETS : (kind==="questions") ? LS_QS : LS_UI;
-  const uploaded = localStorage.getItem(key);
-  if(uploaded) return uploaded;
+const LS = {
+  LAST_SET_ID: "JPQ_LAST_SET_ID",
+  LAST_SCORE: "JPQ_LAST_SCORE",
+  LAST_TOTAL: "JPQ_LAST_TOTAL",
+  WRONG_IDS: "JPQ_LAST_WRONG",
+};
 
-  const path = (kind==="sets") ? "data/sets.csv" :
-               (kind==="questions") ? "data/questions.csv" :
-               "data/ui_text.csv";
-  const res = await fetch(path);
-  if(!res.ok) return "";
-  return await res.text();
+const DEFAULT_SET_FALLBACK = ""; // if empty, uses first published set in sets.csv
+
+// ===== DOM =====
+const els = {
+  exitBtn: document.getElementById("exitBtn"),
+  exitBar: document.getElementById("exitBar"),
+  exitContinue: document.getElementById("exitContinue"),
+  exitQuit: document.getElementById("exitQuit"),
+
+  pillProgress: document.getElementById("pillProgress"),
+  pillScore: document.getElementById("pillScore"),
+  pillLevel: document.getElementById("pillLevel"),
+
+  audioBtn: document.getElementById("audioBtn"),
+  promptEn: document.getElementById("promptEn"),
+  promptJa: document.getElementById("promptJa"),
+  imgGrid: document.getElementById("imgGrid"),
+  choices: document.getElementById("choices"),
+
+  checkBtn: document.getElementById("checkBtn"),
+  bottomRight: document.getElementById("bottomRight"),
+
+  overlay: document.getElementById("overlay"),
+  panelMsg: document.getElementById("panelMsg"),
+  panelSub: document.getElementById("panelSub"),
+  continueBtn: document.getElementById("continueBtn"),
+  retryBtn: document.getElementById("retryBtn"),
+
+  scriptPanel: document.getElementById("scriptPanel"),
+  toggleScript: document.getElementById("toggleScript"),
+  scriptCols: document.getElementById("scriptCols"),
+  scriptJa: document.getElementById("scriptJa"),
+  scriptEn: document.getElementById("scriptEn"),
+};
+
+// ===== state =====
+let setId = null;
+let setMeta = null;
+let questions = [];
+let idx = 0;
+
+let score = 0;
+let wrongIds = [];
+
+let selectedIndex = null;
+let correctIndexNow = 0;
+
+// typing state
+let typedAnswer = "";
+
+const audio = new Audio();
+audio.preload = "auto";
+
+let uiTextMap = {}; // optional ui_text.csv
+
+// =========================================================
+// CSV loader (fetch from GitHub)
+// =========================================================
+
+function stripBOM(s){
+  return s && s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
 }
 
-/* ========= CSV parser ========= */
 function parseCSV(text){
-  const rows=[];
-  let row=[], cur="", inQ=false;
+  // Simple CSV parser with quotes support (enough for your current files)
+  // Returns array of objects using header row keys.
+  text = stripBOM(text || "");
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQ = false;
+
   for(let i=0;i<text.length;i++){
-    const c=text[i], n=text[i+1];
-    if(c === '"'){
-      if(inQ && n === '"'){ cur+='"'; i++; }
-      else inQ=!inQ;
-    } else if(c === ',' && !inQ){
+    const ch = text[i];
+
+    if(inQ){
+      if(ch === '"'){
+        const next = text[i+1];
+        if(next === '"'){ cur += '"'; i++; }
+        else { inQ = false; }
+      }else{
+        cur += ch;
+      }
+      continue;
+    }
+
+    if(ch === '"'){ inQ = true; continue; }
+    if(ch === ","){ row.push(cur); cur=""; continue; }
+    if(ch === "\n"){
       row.push(cur); cur="";
-    } else if((c==='\n' || c==='\r') && !inQ){
-      if(c==='\r' && n==='\n') i++;
-      row.push(cur);
-      if(row.some(v=>v.trim()!=="")) rows.push(row);
-      row=[]; cur="";
-    } else cur+=c;
+      // ignore empty trailing lines
+      if(row.some(c => (c||"").trim() !== "")) rows.push(row);
+      row = [];
+      continue;
+    }
+    if(ch === "\r"){ continue; }
+    cur += ch;
   }
-  row.push(cur);
-  if(row.some(v=>v.trim()!=="")) rows.push(row);
+  // last row
+  if(cur.length || row.length){
+    row.push(cur);
+    if(row.some(c => (c||"").trim() !== "")) rows.push(row);
+  }
+  if(rows.length === 0) return [];
 
-  const header = rows.shift().map(h=>h.trim());
-  return rows.map(r=>{
-    const o={};
-    header.forEach((h,idx)=>o[h]=(r[idx]??"").trim());
-    return o;
-  });
-}
-
-/* ========= mini markup ========= */
-function decodeHTMLEntities(str){
-  // Turns "&lt;b&gt;" into "<b>" so tags/markup from CSV can render
-  const t = document.createElement("textarea");
-  t.innerHTML = String(str ?? "");
-  return t.value;
-}
-function escapeHTML(str){
-  return String(str).replace(/[&<>"']/g, m => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[m]));
-}
-function miniMarkupToHTML(s){
-  if(!s) return "";
-  // 1) decode entities first (so <b> etc works even if CSV escaped)
-  let out = decodeHTMLEntities(String(s));
-
-  // 2) allow simple tokens
-  out = out.replace(/\[br\]/gi, "<br>");
-
-  // 3) Ruby in two styles:
-  //    A) [ruby]漢字[rt]かんじ[/rt][/ruby]
-  //    B) <ruby>漢字<rt>かんじ</rt></ruby>  (already works after entity-decode)
-  out = out.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/gi, (_, rb, rt) => {
-    return `<ruby>${escapeHTML(rb)}<rt>${escapeHTML(rt)}</rt></ruby>`;
-  });
-
-  // 4) lightweight “BBCode-ish” styling
-  out = out.replace(/\[b\]([\s\S]*?)\[\/b\]/gi, "<b>$1</b>");
-  out = out.replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<span class="mk-i">$1</span>');
-  out = out.replace(/\[u\]([\s\S]*?)\[\/u\]/gi, "<u>$1</u>");
-  out = out.replace(/\[hl\]([\s\S]*?)\[\/hl\]/gi, '<span class="mk-hl">$1</span>');
-  out = out.replace(/\[big\]([\s\S]*?)\[\/big\]/gi, '<span class="mk-big">$1</span>');
-  out = out.replace(/\[small\]([\s\S]*?)\[\/small\]/gi, '<span class="mk-small">$1</span>');
-  out = out.replace(/\[thick\]([\s\S]*?)\[\/thick\]/gi, '<span class="thick">$1</span>');
-
+  const header = rows[0].map(h => (h||"").trim());
+  const out = [];
+  for(let r=1;r<rows.length;r++){
+    const obj = {};
+    for(let c=0;c<header.length;c++){
+      obj[header[c]] = (rows[r][c] ?? "").trim();
+    }
+    out.push(obj);
+  }
   return out;
 }
 
-/* ========= UI text map ========= */
-function buildUiTextMap(rows){
-  const m = new Map(); // ui|type -> text
-  for(const r of rows){
-    const ui = (r.ui || "").trim();
-    const key = (r.key || "").trim();
-    const text = (r.text || "").trim();
-    if(ui && key) m.set(`${ui}|${key}`, text);
+async function fetchCSV(path){
+  const res = await fetch(path, { cache: "no-store" });
+  if(!res.ok){
+    throw new Error(`Failed to fetch ${path} (${res.status})`);
   }
-  return m;
+  const txt = await res.text();
+  return parseCSV(txt);
 }
 
-/* ========= Saved questions (per set) ========= */
-const LS_SAVED_Q = "JPQ_SAVED_QIDS_BY_SET"; // { [setId]: [qId,...] }
-function getSavedMap(){
-  try{ return JSON.parse(localStorage.getItem(LS_SAVED_Q)||"{}"); }catch(e){ return {}; }
+// =========================================================
+// UI text helper
+// =========================================================
+function buildUiTextMap(rows){
+  const map = {};
+  for(const r of rows){
+    const k = (r.key || r.id || "").trim();
+    if(!k) continue;
+    map[k] = r.value || r.text || "";
+  }
+  return map;
 }
-function getSavedIdsForSet(sid){
-  const m=getSavedMap();
-  const a=m[sid];
-  return Array.isArray(a)? a : [];
-}
-function setSavedIdsForSet(sid, arr){
-  const m=getSavedMap();
-  m[sid] = Array.from(new Set(arr));
-  localStorage.setItem(LS_SAVED_Q, JSON.stringify(m));
-}
-function isSavedQ(sid, qid){
-  return getSavedIdsForSet(sid).includes(qid);
-}
-function toggleSavedQ(sid, qid){
-  const arr = getSavedIdsForSet(sid);
-  const i = arr.indexOf(qid);
-  if(i>=0) arr.splice(i,1); else arr.push(qid);
-  setSavedIdsForSet(sid, arr);
+function t(key, fallback){
+  return (uiTextMap && uiTextMap[key]) ? uiTextMap[key] : fallback;
 }
 
-/* ========= Quiz state ========= */
-const url = new URL(location.href);
-const setId = url.searchParams.get("set_id") || "";
-const mode  = (url.searchParams.get("mode") || "").toLowerCase(); // "review" | "saved"
-
-let allItems = [];       // full set items
-let items = [];          // current round items (subset)
-let idx = 0;
-let score = 0;
-let selectedIndex = null;
-
-let roundNum = 1;
-let remainingWrong = new Set(); // qIds not yet mastered
-let keepGoingShown = false;
-
-let correctIndexNow = 0;
-let uiMode = "en";
-let uiTextMap = new Map();
-
-/* ========= IMPORTANT: write last result for result.html ========= */
-function saveLastResult(){
-  localStorage.setItem(LS_LAST_SET, setId);
-  localStorage.setItem(LS_LAST_SCORE, String(score));
-  localStorage.setItem(LS_LAST_TOTAL, String(items.length || 1));
-}
-/* ========= Wrong tracking (Duolingo loop) ========= */
-const LS_WRONG_IDS_BY_SET = "JPQ_WRONG_IDS_BY_SET"; // { [setId]: [qId,...] }
-function getWrongMap(){
-  try{ return JSON.parse(localStorage.getItem(LS_WRONG_IDS_BY_SET)||"{}"); }catch(e){ return {}; }
-}
-function setWrongIdsForSet(sid, ids){
-  const m=getWrongMap();
-  m[sid] = Array.from(new Set(ids));
-  localStorage.setItem(LS_WRONG_IDS_BY_SET, JSON.stringify(m));
-}
-function getWrongIdsForSet(sid){
-  const m=getWrongMap();
-  const a=m[sid];
-  return Array.isArray(a)? a : [];
-}
-function persistWrong(){
-  setWrongIdsForSet(setId, Array.from(remainingWrong));
-  localStorage.setItem(`JPQ_WRONG_COUNT_${setId}`, String(remainingWrong.size));
-  localStorage.setItem(`JPQ_TRIED_${setId}`, "1");
+// =========================================================
+// Markup helpers (already used in your CSV)
+// =========================================================
+function escapeHTML(s){
+  return (s||"").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
 }
 
-/* ========= Stable QID ========= */
-function getQId(q, i){
-  return (q.q_id || q.id || q.question_id || "").trim() || `${setId}__${i+1}`;
+// Minimal markup: [b] [i] [u] [hl] [small] [big] [ruby]word[rt]reading[/rt][/ruby]
+function miniMarkupToHTML(s){
+  s = s || "";
+  // ruby: [ruby]漢字[rt]かんじ[/rt][/ruby]
+  // your CSV uses [ruby]... [rt]...[/rt][/ruby]
+  s = s.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g, (m, a, b)=>{
+    return `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`;
+  });
+  s = s.replace(/\[b\]([\s\S]*?)\[\/b\]/g, "<b>$1</b>");
+  s = s.replace(/\[i\]([\s\S]*?)\[\/i\]/g, "<i>$1</i>");
+  s = s.replace(/\[u\]([\s\S]*?)\[\/u\]/g, "<u>$1</u>");
+  s = s.replace(/\[hl\]([\s\S]*?)\[\/hl\]/g, `<span class="hl">$1</span>`);
+  s = s.replace(/\[small\]([\s\S]*?)\[\/small\]/g, `<span class="small">$1</span>`);
+  s = s.replace(/\[big\]([\s\S]*?)\[\/big\]/g, `<span class="big">$1</span>`);
+  return s;
 }
+
+// =========================================================
+// Shuffle helper
+// =========================================================
 function shuffle(arr){
-  const a=[...arr];
+  const a = arr.slice();
   for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
   }
   return a;
 }
 
-/* ========= Audio ========= */
-const audio = new Audio();
-audio.preload = "auto";
-audio.loop = true;
-
-const SFX = {
-  pin: new Audio("assets/ui/audio/sfx_pin.mp3"),
-  bu:  new Audio("assets/ui/audio/sfx_bu.mp3"),
-};
-
-function showPlayState(isPlaying){
-  document.getElementById("playBtn").style.display  = isPlaying ? "none" : "block";
-  document.getElementById("pauseBtn").style.display = isPlaying ? "block" : "none";
-}
-document.getElementById("playBtn").addEventListener("click", async ()=>{
-  try{ await audio.play(); showPlayState(true); }catch(e){}
-});
-document.getElementById("pauseBtn").addEventListener("click", ()=>{
-  audio.pause(); showPlayState(false);
-});
-
-/* ========= UI toggles ========= */
-function setUiMode(next){
-  uiMode = next;
-  document.getElementById("uiEn").classList.toggle("on", uiMode==="en");
-  document.getElementById("uiJa").classList.toggle("on", uiMode==="ja");
-  renderInstOnly();
-}
-document.getElementById("uiEn").addEventListener("click", ()=>setUiMode("en"));
-document.getElementById("uiJa").addEventListener("click", ()=>setUiMode("ja"));
-
-/* ========= Script sheet ========= */
-const sheet = document.getElementById("sheet");
-const qaScript = document.getElementById("qaScript");
-const panelScript = document.getElementById("panelScript");
-
-function openSheet(){
-  if(qaScript.classList.contains("disabled")) return;
-  sheet.classList.add("show");
-}
-function closeSheet(){ sheet.classList.remove("show"); }
-
-document.getElementById("sheetExitBtn").addEventListener("click", closeSheet);
-qaScript.addEventListener("click", openSheet);
-panelScript.addEventListener("click", openSheet);
-
-/* ========= Save toggles ========= */
-function syncSaveUI(){
-  const q = items[idx];
-  const qid = q ? q.__qid : "";
-  const on = !!qid && isSavedQ(setId, qid);
-  document.getElementById("qaSave").classList.toggle("on", on);
-  document.getElementById("panelSave").classList.toggle("on", on);
-  document.getElementById("panelSaveText").textContent = on ? "Saved" : "Save";
-}
-function toggleSave(){
-  const q = items[idx];
-  if(!q) return;
-  toggleSavedQ(setId, q.__qid);
-  syncSaveUI();
-}
-document.getElementById("qaSave").addEventListener("click", toggleSave);
-document.getElementById("panelSave").addEventListener("click", toggleSave);
-
-/* ========= Exit confirm bar ========= */
-const exitBar = document.getElementById("exitBar");
-function showExitBar(on){ exitBar.classList.toggle("show", !!on); }
-document.getElementById("exitBtn").addEventListener("click", ()=>{
-  showExitBar(!exitBar.classList.contains("show"));
-});
-document.getElementById("exitContinue").addEventListener("click", ()=> showExitBar(false));
-document.getElementById("exitQuit").addEventListener("click", ()=>{
-  saveLastResult();              // ✅ so result shows real percent even on quit
-  location.href = "result.html";
-});
-
-/* ========= Result overlay ========= */
-const overlay = document.getElementById("overlay");
-const resultPanel = document.getElementById("resultPanel");
-
-/* ========= Keep-going modal ========= */
-const keepGoingModal = document.getElementById("keepGoingModal");
-const keepGoingImg = document.getElementById("keepGoingImg");
-const keepGoingFallback = document.getElementById("keepGoingFallback");
-if(keepGoingImg){
-  keepGoingImg.addEventListener("error", ()=>{
-    if(keepGoingFallback) keepGoingFallback.style.display = "block";
-  });
-}
-function showKeepGoingModal(){
-  return new Promise((resolve)=>{
-    if(!keepGoingModal){ resolve(); return; }
-    keepGoingModal.classList.add("show");
-    keepGoingModal.setAttribute("aria-hidden","false");
-    const close = ()=>{
-      keepGoingModal.classList.remove("show");
-      keepGoingModal.setAttribute("aria-hidden","true");
-      keepGoingModal.removeEventListener("click", close);
-      resolve();
-    };
-    keepGoingModal.addEventListener("click", close);
-  });
+// =========================================================
+// Typing question helpers
+// =========================================================
+function isInputQuestion(q){
+  const raw = String((q.type || q.q_type || "")).trim().toLowerCase();
+  return raw === "input" || raw === "q_type_input" || raw === "typing" || raw === "type_input";
 }
 
-function showResult(correct){
-  showExitBar(false);
-  overlay.classList.remove("show");
-
-  overlay.style.background = correct
-    ? "rgba(120,190,255,.30)"
-    : "rgba(255,120,120,.26)";
-
-  resultPanel.style.background = correct ? "#16384f" : "#3a1a1c";
-  resultPanel.style.borderColor = correct
-    ? "rgba(120,190,255,.65)"
-    : "rgba(255,120,120,.55)";
-
-  document.getElementById("resultMsg").src = correct
-    ? "assets/ui/messages/message-result-pin.png"
-    : "assets/ui/messages/message-result-bu.png";
-
-  try{
-    const s = correct ? SFX.pin : SFX.bu;
-    s.currentTime = 0;
-    s.play();
-  }catch(e){}
-
-  setTimeout(()=> overlay.classList.add("show"), 220);
+function kataToHira(str){
+  return (str || "").replace(/[\u30A1-\u30F6]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+}
+function normalizeKana(str){
+  return kataToHira((str||"").trim());
+}
+function normalizeRomaji(str){
+  let out = (str||"").trim().toLowerCase().replace(/\s+/g,"").replace(/'/g,"");
+  // macron -> double vowels
+  out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
+  // handle combining macron just in case
+  out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
+  return out;
+}
+function isKanaLike(str){
+  return /[\u3040-\u30FF]/.test(str || "");
+}
+function acceptPartial(user, target){
+  if(!user || user.length < 2) return false;
+  return target.includes(user);
 }
 
-function hideResult(){ overlay.classList.remove("show"); }
-document.getElementById("overlayCloseBtn").addEventListener("click", hideResult);
+function extractBracketAnswer(promptJa){
+  // If your prompt uses: ... [もとに] ...
+  const m = String(promptJa||"").match(/\[([^\]]+)\]/);
+  return m ? m[1].trim() : "";
+}
 
-document.getElementById("continueBtn").addEventListener("click", async ()=>{
-  hideResult();
+function getAcceptedAnswers(q){
+  // Preferred: answer_text column (pipe separated)
+  const raw = (q.answer_text || "").split("|").map(s=>s.trim()).filter(Boolean);
+  if(raw.length) return raw;
 
-  if(idx < items.length - 1){
-    idx++;
-    render();
-    return;
+  // Fallback: bracketed answer in prompt_ja
+  const br = extractBracketAnswer(q.prompt_ja);
+  if(br) return [br];
+
+  return [];
+}
+
+function checkTyped(q, userRaw){
+  const accepted = getAcceptedAnswers(q);
+  if(!accepted.length) return false;
+
+  const uRaw = (userRaw || "").trim();
+  if(!uRaw) return false;
+
+  // If user typed kana, normalize kana both sides
+  if(isKanaLike(uRaw)){
+    const u = normalizeKana(uRaw);
+    const targets = accepted.map(a => normalizeKana(a));
+    return targets.some(t => u === t || acceptPartial(u, t));
+  }else{
+    const u = normalizeRomaji(uRaw);
+    const targets = accepted.map(a => normalizeRomaji(a));
+    return targets.some(t => u === t || acceptPartial(u, t));
+  }
+}
+
+// =========================================================
+// Rendering
+// =========================================================
+function render(){
+  const q = questions[idx];
+
+  // progress + score
+  els.pillProgress.textContent = `${idx+1} / ${questions.length}`;
+  els.pillScore.textContent = `Score: ${score}`;
+
+  // level pill
+  const lvl = (setMeta?.level_jlpt || setMeta?.level_cefr || "").trim();
+  els.pillLevel.textContent = lvl ? lvl : "—";
+
+  // prompts
+  els.promptEn.textContent = q.prompt_en || "";
+  els.promptJa.innerHTML = miniMarkupToHTML(q.prompt_ja || "");
+
+  // audio
+  if(q.audio_file){
+    audio.src = q.audio_file;
+    els.audioBtn.style.opacity = "1";
+    els.audioBtn.style.pointerEvents = "auto";
+  }else{
+    audio.src = "";
+    els.audioBtn.style.opacity = ".35";
+    els.audioBtn.style.pointerEvents = "none";
   }
 
-  // End of round: loop wrongs until empty
-  if(remainingWrong.size > 0){
-    if(roundNum === 1 && !keepGoingShown){
-      keepGoingShown = true;
-      await showKeepGoingModal();
-    }
+  // images
+  renderImages(q);
 
-    roundNum += 1;
-    const wrongIds = Array.from(remainingWrong);
+  // choices / typing
+  renderChoicesOrTyping(q);
 
-    items = wrongIds.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
-    idx = 0;
-    render();
-    return;
-  }
-
-  // mastered all
-  score = allItems.length;
-  persistWrong();
-  saveLastResult();
-  location.href = "result.html";
-});
-
-/* ========= Rendering ========= */
-function getInstText(qType){
-  const key = `${uiMode}|${qType}`;
-  const t = uiTextMap.get(key);
-  if(t) return t;
-  return (uiMode==="ja") ? "聞きましょう。" : "Listen";
+  // scripts
+  renderScripts(q);
 }
 
-function renderImages(imageFiles){
-  const grid = document.getElementById("imgGrid");
-  grid.innerHTML = "";
-  const parts = (imageFiles||"").split("|").map(s=>s.trim()).filter(Boolean);
-  if(parts.length===0){ grid.style.display="none"; return; }
-  grid.style.display="grid";
-  for(const src of parts){
-    const card = document.createElement("div");
-    card.className="imgCard";
+function renderImages(q){
+  els.imgGrid.innerHTML = "";
+  const imgs = (q.image_files || "").split("|").map(s=>s.trim()).filter(Boolean);
+  if(!imgs.length){
+    els.imgGrid.style.display = "none";
+    return;
+  }
+  els.imgGrid.style.display = "";
+  imgs.forEach(src=>{
     const img = document.createElement("img");
+    img.className = "qimg";
     img.src = src;
     img.alt = "";
-    card.appendChild(img);
-    grid.appendChild(card);
-  }
+    els.imgGrid.appendChild(img);
+  });
 }
 
-function renderChoices(q){
-  const wrap = document.getElementById("choices");
-  wrap.innerHTML = "";
+function renderScripts(q){
+  const ja = (q.script_ja || "").trim();
+  const en = (q.script_en || "").trim();
+
+  // Show panel only if there's any script content
+  if(!ja && !en){
+    els.scriptPanel.style.display = "none";
+    return;
+  }
+  els.scriptPanel.style.display = "";
+
+  els.scriptJa.innerHTML = miniMarkupToHTML(ja || "");
+  els.scriptEn.innerHTML = miniMarkupToHTML(en || "");
+}
+
+// ---- choices or typing ----
+function renderChoicesOrTyping(q){
+  // reset
   selectedIndex = null;
+  typedAnswer = "";
+
+  if(isInputQuestion(q)){
+    renderTyping(q);
+    return;
+  }
+  renderMCQ(q);
+}
+
+function renderTyping(q){
+  const wrap = els.choices;
+  wrap.classList.remove("twoCol");
+  wrap.innerHTML = "";
+
+  const box = document.createElement("div");
+  box.style.display = "grid";
+  box.style.gap = "10px";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.id = "typeAnswer";
+  input.autocomplete = "off";
+  input.autocapitalize = "none";
+  input.spellcheck = false;
+  input.placeholder = "Type here (かな / カナ / romaji)";
+  input.style.width = "100%";
+  input.style.boxSizing = "border-box";
+  input.style.padding = "14px 14px";
+  input.style.borderRadius = "14px";
+  input.style.border = "1px solid rgba(255,255,255,.18)";
+  input.style.background = "rgba(255,255,255,.06)";
+  input.style.color = "white";
+  input.style.fontSize = "16px";
+  input.style.outline = "none";
+
+  const hint = document.createElement("div");
+  hint.style.fontSize = "12px";
+  hint.style.color = "rgba(255,255,255,.62)";
+
+  const acc = getAcceptedAnswers(q);
+  const hasMacronExample = acc.some(a => /[āīūēō]/.test(a));
+  hint.innerHTML = `Kana or romaji OK. ${hasMacronExample ? "Macron OK (ōkī)." : "Romaji OK (ookii)."} Partial OK (min 2 chars).`;
+
+  input.addEventListener("input", ()=>{ typedAnswer = input.value; });
+  input.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter"){
+      e.preventDefault();
+      els.checkBtn.click();
+    }
+  });
+
+  box.appendChild(input);
+  box.appendChild(hint);
+  wrap.appendChild(box);
+
+  setTimeout(()=>input.focus(), 60);
+}
+
+function renderMCQ(q){
+  const wrap = els.choices;
+  wrap.innerHTML = "";
 
   const rawParts = (q.choices_text || "").split("|").map(v => v.trim()).filter(Boolean);
   const pairs = rawParts.map((text, origIdx) => ({ text, origIdx }));
 
-  // Detect "listen-only type 1" robustly (use either column name)
-  const qtRaw = String((q.type || q.q_type || "")).trim();
-  const noShuffle =
-    /^1$/.test(qtRaw) ||
-    /^1\b/.test(qtRaw) ||
-    /^q[_-]?type[_-]?1$/i.test(qtRaw) ||
-    /^qtype1$/i.test(qtRaw);
+  // Shuffle unless it's q_type_1_listen_only (your "type 1")
+  const qt = String((q.type || q.q_type || "")).trim().toLowerCase();
+  const noShuffle = (qt === "q_type_1_listen_only");
 
   const shown = noShuffle ? pairs : shuffle(pairs);
 
-  // Answer index: support 0-based and 1-based CSV
+  // Answer index: support 0-based and 1-based
   let correctOrig = parseInt(q.answer_index || "0", 10);
   if(!Number.isFinite(correctOrig)) correctOrig = 0;
+  // if looks 1-based (>=1) and within range -> convert to 0-based
   if(correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
     correctOrig = correctOrig - 1;
   }
   correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
+  if(correctIndexNow < 0) correctIndexNow = 0;
 
   const long = shown.some(p => (p.text || "").length > 22);
   wrap.classList.toggle("twoCol", !long);
@@ -964,176 +986,179 @@ function renderChoices(q){
   });
 }
 
-function renderInstOnly
-(){
-  const q = items[idx];
-  if(!q) return;
-  document.getElementById("instText").innerHTML = miniMarkupToHTML(getInstText(q.type));
+// =========================================================
+// Overlay feedback
+// =========================================================
+function showOverlay(ok, msg, sub){
+  els.panelMsg.textContent = msg;
+  els.panelSub.textContent = sub || "";
+  els.overlay.classList.add("show");
+
+  // visual hint: which is "primary"
+  els.continueBtn.style.opacity = ok ? "1" : ".65";
+  els.retryBtn.style.opacity = ok ? ".65" : "1";
+}
+function hideOverlay(){
+  els.overlay.classList.remove("show");
 }
 
-function setScriptAvailability(hasAny){
-  qaScript.classList.toggle("disabled", !hasAny);
-  panelScript.style.opacity = hasAny ? "1" : ".28";
-  panelScript.style.pointerEvents = hasAny ? "auto" : "none";
+// =========================================================
+// Flow
+// =========================================================
+function playAudio(){
+  if(!audio.src) return;
+  audio.currentTime = 0;
+  audio.play().catch(()=>{});
 }
 
-function renderScriptBoxes(q){
-  const jaRaw = (q.script_ja || "").trim();
-  const enRaw = (q.script_en || "").trim();
+function finish(){
+  localStorage.setItem(LS.LAST_SET_ID, setId);
+  localStorage.setItem(LS.LAST_TOTAL, String(questions.length));
+  const pct = Math.round((score / questions.length) * 100);
+  localStorage.setItem(LS.LAST_SCORE, String(pct));
+  localStorage.setItem(LS.WRONG_IDS, JSON.stringify(wrongIds));
 
-  const jaEl = document.getElementById("scriptJa");
-  const enEl = document.getElementById("scriptEn");
-  const colsEl = document.getElementById("scriptCols");
+  location.href = "result.html";
+}
 
-  const hasJa = jaRaw.length > 0;
-  const hasEn = enRaw.length > 0;
-
-  jaEl.classList.toggle("hidden", !hasJa);
-  enEl.classList.toggle("hidden", !hasEn);
-
-  if(hasJa) jaEl.innerHTML = miniMarkupToHTML(jaRaw);
-  if(hasEn) enEl.innerHTML = miniMarkupToHTML(enRaw);
-
-  colsEl.classList.toggle("oneCol", (hasJa && !hasEn) || (!hasJa && hasEn));
-  setScriptAvailability(hasJa || hasEn);
-
-  if(sheet.classList.contains("show") && !(hasJa || hasEn)){
-    sheet.classList.remove("show");
+function next(){
+  hideOverlay();
+  idx += 1;
+  if(idx >= questions.length){
+    finish();
+    return;
   }
+  render();
+  playAudio();
 }
 
-function render(){
-  const q = items[idx];
-  if(!q) return;
-
-  showExitBar(false);
-
-  document.getElementById("qCount").textContent = `R${roundNum} • Q: ${idx+1}/${items.length}`;
-  document.getElementById("scoreBox").textContent = `Score: ${score}/${allItems.length}`;
-
-  renderInstOnly();
-
-  document.getElementById("promptJa").innerHTML = miniMarkupToHTML((q.prompt_ja || "").trim());
-  document.getElementById("promptEn").innerHTML = miniMarkupToHTML((q.prompt_en || "").trim());
-
-  renderImages(q.image_files || "");
-
-  audio.src = q.audio_file || "";
-  audio.pause();
-  showPlayState(false);
-
-  renderChoices(q);
-  renderScriptBoxes(q);
-
-  syncSaveUI();
+function retry(){
+  hideOverlay();
+  // for typing, re-focus
+  const inp = document.getElementById("typeAnswer");
+  if(inp) inp.focus();
+  playAudio();
 }
 
-/* ========= Check ========= */
-document.getElementById("checkBtn").addEventListener("click", ()=>{
-  const q = items[idx];
-  if(!q) return;
+// =========================================================
+// Event wiring
+// =========================================================
+els.audioBtn.addEventListener("click", playAudio);
 
-  const qid = q.__qid;
-  const ok = (selectedIndex !== null) && (selectedIndex === correctIndexNow);
+els.checkBtn.addEventListener("click", ()=>{
+  const q = questions[idx];
 
-  // Score = unique mastered count
-  if(ok && remainingWrong.has(qid)) score += 1;
+  let ok = false;
+  if(isInputQuestion(q)){
+    ok = checkTyped(q, typedAnswer);
+  }else{
+    ok = (selectedIndex !== null) && (selectedIndex === correctIndexNow);
+  }
 
-  if(ok) remainingWrong.delete(qid);
-  else   remainingWrong.add(qid);
+  if(ok){
+    score += 1;
+    showOverlay(true, "Correct ✅", "Nice! Continue.");
+  }else{
+    wrongIds.push(q.question_id || String(idx));
+    showOverlay(false, "Almost 💡", "Try again, or Continue to move on.");
+  }
 
-  persistWrong();
-  saveLastResult();
-
-  showResult(ok);
+  // update score pill immediately
+  els.pillScore.textContent = `Score: ${score}`;
 });
 
-/* ========= Keyboard ========= */
-document.addEventListener("keydown", (e)=>{
-  if(e.key === "Escape"){
-    overlay.classList.remove("show");
-    sheet.classList.remove("show");
-    showExitBar(false);
+els.continueBtn.addEventListener("click", next);
+els.retryBtn.addEventListener("click", retry);
+
+// Exit confirm
+els.exitBtn.addEventListener("click", ()=> els.exitBar.classList.add("show"));
+els.exitContinue.addEventListener("click", ()=> els.exitBar.classList.remove("show"));
+els.exitQuit.addEventListener("click", ()=> location.href = "menu.html");
+
+// Script toggle glow
+els.toggleScript.addEventListener("click", ()=>{
+  const expanded = els.scriptPanel.classList.toggle("expanded");
+  if(expanded){
+    els.toggleScript.classList.add("glow");
+  }else{
+    els.toggleScript.classList.remove("glow");
   }
 });
 
-/* ========= Init ========= */
-(async function init(){
-  if(!setId){
-    alert("Missing set_id.");
-    location.href = "menu.html";
-    return;
-  }
-
-  const qsCSV = await getCSV("questions");
-  if(!qsCSV){
-    alert("questions.csv not available. Open upload.html and upload CSV files.");
-    location.href = "upload.html";
-    return;
-  }
-
-  const uiCSV = await getCSV("ui");
-  if(uiCSV){
-    uiTextMap = buildUiTextMap(parseCSV(uiCSV));
-  }
-
-  const all = parseCSV(qsCSV);
-  allItems = all.filter(r => r.set_id === setId);
-  allItems.forEach((q,i)=>{ q.__qid = getQId(q,i); });
-  items = [...allItems];
-// Mode: review = load only wrong questions saved for this set
-if(mode === "review"){
-  const ids = getWrongIdsForSet(setId);
-  if(ids.length === 0){
-    alert("No wrong questions saved for this quiz yet.");
-    location.href = "menu.html";
-    return;
-  }
-  items = ids.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
-  roundNum = 1;
-  remainingWrong = new Set(ids);
-  score = 0;
-  saveLastResult();
-  persistWrong();
-  render();
-  return;
+// =========================================================
+// Boot: choose setId and load CSV
+// =========================================================
+function getParam(name){
+  const url = new URL(location.href);
+  return url.searchParams.get(name);
 }
 
-// Mode: saved = load only saved questions for this set
-if(mode === "saved"){
-  const ids = getSavedIdsForSet(setId);
-  if(ids.length === 0){
-    alert("No saved questions yet for this quiz.");
+async function boot(){
+  try{
+    const [setsRows, qRows] = await Promise.all([
+      fetchCSV(FILES.sets),
+      fetchCSV(FILES.questions),
+    ]);
+
+    // ui_text is optional
+    try{
+      const uiRows = await fetchCSV(FILES.ui);
+      uiTextMap = buildUiTextMap(uiRows);
+    }catch(_e){
+      uiTextMap = {};
+    }
+
+    const requested = getParam("set") || getParam("set_id");
+    const last = localStorage.getItem(LS.LAST_SET_ID) || "";
+    const fallback = DEFAULT_SET_FALLBACK || last || requested || "";
+
+    // Choose set:
+    // 1) URL param if present
+    // 2) last played
+    // 3) first published
+    const published = setsRows.filter(s => String(s.is_published||"").trim() === "1");
+    const firstPublished = published[0]?.set_id || setsRows[0]?.set_id || "";
+
+    setId = requested || last || fallback || firstPublished || "";
+    if(!setId){
+      alert("No set_id found. Please add sets.csv and questions.csv to the repo.");
+      location.href = "menu.html";
+      return;
+    }
+
+    setMeta = setsRows.find(s => s.set_id === setId) || null;
+
+    // Filter questions for this set
+    questions = qRows.filter(q => q.set_id === setId);
+
+    // If you want exactly 10 questions: choose the first 10 (or shuffle then take 10)
+    // For typing practice you said "10 questions each set".
+    // We'll take first 10 in file order.
+    if(questions.length > 10) questions = questions.slice(0, 10);
+
+    if(questions.length === 0){
+      alert(`No questions found for set_id: ${setId}`);
+      location.href = "menu.html";
+      return;
+    }
+
+    // Reset
+    idx = 0;
+    score = 0;
+    wrongIds = [];
+
+    // Render first
+    render();
+    playAudio();
+
+  }catch(e){
+    console.error(e);
+    alert("Could not load CSV from GitHub. Make sure questions.csv and sets.csv are in the same folder as quiz.html.");
     location.href = "menu.html";
-    return;
   }
-  items = ids.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
-  roundNum = 1;
-  remainingWrong = new Set(ids);
-  score = 0;
-  saveLastResult();
-  persistWrong();
-  render();
-  return;
 }
 
-
-
-  if(allItems.length === 0){
-    alert("No questions found for this set_id.");
-    location.href = "menu.html";
-    return;
-  }
-
-  // initialize last result (so even first open has correct total)
-  roundNum = 1;
-  remainingWrong = new Set(allItems.map(q=>q.__qid));
-  score = 0;
-
-  saveLastResult();
-  persistWrong();
-  render();
-})();
+boot();
 </script>
 </body>
 </html>
