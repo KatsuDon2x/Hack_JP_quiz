@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz</title>
+  <style>
+    :root{
+      --bg:#000;
+      --fg:#fff;
+      --muted:rgba(255,255,255,.65);
+      --lime:#C8FF2E;
+
+      --panel-bg: #162c40;          /* solid = crisp */
+      --panel-border: rgba(255,255,255,.18);
+      --darkbar: rgba(45,45,45,.92);
+    }
+
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    }
+
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding:16px;
+      padding-bottom:160px;
+    }
+
+    /* ===== top area ===== */
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-top:4px;
+      flex-wrap:wrap;
+    }
+    .leftTop{ display:flex; align-items:center; gap:10px; }
+    .btnImg{
+      display:block;
+      height:auto;
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+    .exitBtn{ width:50px; }
+
+    .statusRow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .statusPill{
+      background:#fff;
+      color:#000;
+      border-radius:14px;
+      padding:8px 12px;
+      font-size:14px;
+      font-weight:900;
+      min-width:110px;
+      text-align:center;
+    }
+
+    .uiToggle{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      background:var(--lime);
+      border-radius:14px;
+      padding:6px;
+    }
+    .uiPill{
+      padding:8px 10px;
+      border-radius:12px;
+      font-size:13px;
+      font-weight:900;
+      color:#000;
+      opacity:.45;
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .uiPill.on{ opacity:1; background:rgba(0,0,0,.12); }
+
+    /* ===== instruction ===== */
+    .inst{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin:14px 0 10px;
+    }
+    .audioBtn{ width:72px; }
+    .instText{
+      font-size:16px;
+      color:var(--fg);
+      line-height:1.4;
+    }
+
+    /* ===== prompt sizes ===== */
+    .promptBox{ margin:10px 0 12px; }
+
+    .promptJa{
+      font-size:27px;      /* main +20% */
+      line-height:1.45;
+      margin:0 0 6px;
+      font-weight:450;
+    }
+    .promptJa ruby{ ruby-position: over; }
+    .promptJa rt{
+      font-size:0.80em;    /* ruby ~+50% clearer */
+      opacity:0.92;
+      letter-spacing:0.02em;
+    }
+    .promptEn{
+      font-size:14px;
+      line-height:1.5;
+      margin:0;
+      color:rgba(255,255,255,.82);
+    }
+
+    /* ===== images ===== */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:12px;
+      margin:10px 0 14px;
+    }
+    .imgCard{
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      overflow:hidden;
+    }
+    .imgCard img{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+
+    /* ===== choices ===== */
+    .choices{ margin-top:6px; display:grid; gap:10px; }
+    .choices.twoCol{ grid-template-columns: 1fr 1fr; }
+
+    .choiceBtn{
+      text-align:left;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);
+      color:var(--fg);
+      cursor:pointer;
+      font-weight:600;
+      font-size:16px;
+      line-height:1.35;
+      transition: background .12s ease, border-color .12s ease, color .12s ease;
+    }
+    .choiceBtn.active{
+      background:var(--lime);
+      border-color:rgba(0,0,0,.25);
+      color:#000;
+      font-weight:900;
+    }
+
+    /* ===== bottom bar ===== */
+    .bottomBar{
+      position:fixed;
+      left:0; right:0; bottom:16px;
+      display:flex;
+      justify-content:center;
+      z-index:40;
+      pointer-events:none;
+    }
+    .bottomInner{
+      width:min(980px, calc(100% - 28px));
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      pointer-events:none;
+    }
+
+    /* check button +20% */
+    .checkBtn{ width:216px; pointer-events:auto; }
+
+    .rightActions{
+      display:flex;
+      gap:10px;
+      align-items:flex-end;
+      pointer-events:auto;
+
+    }
+    .qa{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.55);
+      cursor:pointer;
+      user-select:none;
+      font-size:15px;
+      color:var(--fg);
+      white-space:nowrap;
+    }
+    .qa.save{ opacity:.35; }
+    .qa.save.on{ opacity:1; }
+    .qa .sub{ font-size:12px; color:var(--muted); }
+
+    .qa.disabled{
+      opacity:.28;
+      pointer-events:none;
+      filter: grayscale(1);
+    }
+
+    /* ===== Exit confirm bar (FIXED: smaller + side-by-side) ===== */
+    .exitBar{
+      position:fixed;
+      left:0; right:0;
+      top:0;
+      z-index:80;
+      display:flex;
+      justify-content:center;
+      pointer-events:none;
+      transform: translateY(-120%);
+      transition: transform .18s ease;
+    }
+    .exitBar.show{ transform: translateY(0); }
+
+    .exitBarInner{
+      width:min(980px, calc(100% - 28px));
+      background:var(--darkbar);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:18px;
+      margin-top:10px;
+      padding:12px;
+      display:flex;
+      flex-direction:row;          /* side-by-side */
+      justify-content: space-between;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;              /* small window => stack */
+      pointer-events:auto;
+    }
+    .exitBtnImg{
+      width:min(140px, 30vw);      /* smaller */
+      max-width:260px;
+    }
+
+    /* ===== Result overlay (CRISP) ===== */
+    .overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:flex-start;
+      justify-content:center;
+      padding-top:36px;
+      z-index:60;
+    }
+    .overlay.show{ display:flex; }
+
+    .panel{
+      width:min(980px, calc(100% - 28px));
+      border-radius:18px;
+      border:1px solid var(--panel-border);
+      background:var(--panel-bg);
+      padding:16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      transform: translateY(-16px);
+      opacity: 0;
+      transition: transform .18s ease, opacity .18s ease;
+    }
+    .overlay.show .panel{
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .panelTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+    }
+
+    .resultMsg{
+      width:min(520px, 82vw);
+      height:auto;
+      display:block;
+      margin:10px 0 14px;
+    }
+
+    @keyframes popIn {
+      0%   { transform: scale(.92); opacity: .0; }
+      60%  { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    .overlay.show .resultMsg{
+      animation: popIn .22s ease both;
+    }
+
+    .panelBtns{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .continueBtn{ width:220px; }
+
+    .panelMini{
+      display:flex;
+      gap:18px;
+      align-items:center;
+      font-size:18px;
+    }
+    .panelMini .saved{
+      opacity:.35;
+      cursor:pointer;
+      user-select:none;
+    }
+    .panelMini .saved.on{ opacity:1; }
+
+    /* ===== Script bottom sheet ===== */
+    .sheet{
+      position:fixed;
+      left:0; right:0;
+      bottom:-110%;
+      background: rgba(40, 80, 50, .72);
+      border-top:3px solid var(--lime);
+      box-shadow: 0 -16px 40px rgba(0,0,0,.55);
+      transition: bottom .18s ease;
+      z-index:70;
+      padding:14px;
+    }
+    .sheet.show{ bottom:0; }
+
+    .sheetInner{ max-width:980px; margin:0 auto; }
+    .sheetTop{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+
+    .cols{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+    .cols.oneCol{ grid-template-columns: 1fr; }
+
+    .col{
+      border:1px solid rgba(200,255,46,.32);
+      border-radius:14px;
+      padding:12px;
+      background: rgba(200,255,46,.16);
+      white-space:pre-wrap;
+      max-height: 46vh;
+      overflow:auto;
+    }
+
+    #scriptJa{ font-size:27px; line-height:1.45; font-weight:400; }
+    #scriptJa rt{ font-size:0.80em; opacity:0.92; }
+    #scriptEn{ font-size:14px; line-height:1.5; color:rgba(255,255,255,.85); }
+
+    .hidden{ display:none !important; }
+
+    @media (max-width:520px){
+      .exitBtn{ width:78px; }
+      .audioBtn{ width:64px; }
+      .checkBtn{ width:208px; }
+      .promptJa{ font-size:25px; }
+      #scriptJa{ font-size:25px; }
+      .cols{ grid-template-columns: 1fr; }
+    }
+  /* ===== mini-markup styles ===== */
+.thick{ font-weight:1900; letter-spacing:.02em; }
+
+.mk-hl{ background:rgba(255,255,0,.25); padding:0 .22em; border-radius:.28em; }
+.mk-big{ font-size:1.22em; font-weight:900; }
+.mk-small{ font-size:.86em; opacity:.98; }
+.mk-i{ font-style:italic; }
+u{ text-underline-offset: .18em; }
+
+/* ===== Keep-going modal (after Round 1 if mistakes exist) ===== */
+.keepGoing{
+  position:fixed; inset:0;
+  display:none;
+  align-items:center; justify-content:center;
+  background:rgba(0,0,0,.9);
+  z-index:120;
+  padding:18px;
+}
+.keepGoing.show{ display:flex; }
+.keepGoing img{
+  width:min(520px, 86vw);
+  height:auto;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+.keepFallback{
+  width:min(520px, 86vw);
+  padding:18px 16px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+  backdrop-filter: blur(10px);
+  box-shadow:0 18px 50px rgba(0,0,0,.55);
+  text-align:center;
+}
+.keepFallback .main{ font-size:30px; font-weight:900; margin:4px 0 6px; }
+.keepFallback .rb{ font-size:14px; opacity:.85; margin-bottom:6px; }
+.keepFallback .en{ font-size:14px; opacity:.85; }
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- Exit confirm bar -->
+    <div class="exitBar" id="exitBar">
+      <div class="exitBarInner">
+        <img class="btnImg exitBtnImg" id="exitContinue"
+             src="assets/ui/buttons/button-exit_confirmation-continue.png"
+             alt="Continue" />
+        <img class="btnImg exitBtnImg" id="exitQuit"
+             src="assets/ui/buttons/button-exit_confirmation-quit.png"
+             alt="Quit" />
+      </div>
+    </div>
+
+    <!-- Top area -->
+    <div class="top">
+      <div class="leftTop">
+        <img class="btnImg exitBtn" id="exitBtn"
+             src="assets/ui/buttons/button-exit.png"
+             alt="Exit" />
+
+        <div class="statusRow">
+          <div class="statusPill" id="qCount">Q: 1/1</div>
+          <div class="statusPill" id="scoreBox">Score: 0/1</div>
+        </div>
+      </div>
+
+      <div class="uiToggle">
+        <div class="uiPill on" id="uiEn">English UI</div>
+        <div class="uiPill" id="uiJa">日本語UI</div>
+      </div>
+    </div>
+
+    <!-- Instruction area -->
+    <div class="inst">
+      <img class="btnImg audioBtn" id="playBtn"
+           src="assets/ui/buttons/button-audio-play.png"
+           alt="Play" />
+      <img class="btnImg audioBtn" id="pauseBtn"
+           src="assets/ui/buttons/button-audio-pause.png"
+           alt="Pause" style="display:none;" />
+      <div class="instText" id="instText">Listen</div>
+    </div>
+
+    <!-- Prompt area -->
+    <div class="promptBox">
+      <p class="promptJa" id="promptJa"></p>
+      <p class="promptEn" id="promptEn"></p>
+    </div>
+
+    <!-- Images -->
+    <div class="grid" id="imgGrid" style="display:none;"></div>
+
+    <!-- Choices -->
+    <div class="choices" id="choices"></div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottomBar">
+    <div class="bottomInner">
+      <div style="width:1px;"></div>
+      <img class="btnImg checkBtn" id="checkBtn"
+           src="assets/ui/buttons/button-check.png"
+           alt="Check" />
+      <div class="rightActions">
+        <div class="qa" id="qaScript">🔎 <span class="sub">Script</span></div>
+        <div class="qa save" id="qaSave">🔖 <span class="sub" id="saveText">Saved</span></div>
+      </div>
+    </div>
+  </div>
+
+  
+<!-- Keep-going modal (shown once after Round 1 if mistakes exist) -->
+<div id="keepGoingModal" class="keepGoing" aria-hidden="true">
+  <img id="keepGoingImg" src="assets/ui/messages/message-keep_going.png" alt="Keep going" />
+  <div id="keepGoingFallback" class="keepFallback" style="display:none;">
+    <div class="rb">ぜっこうちょう</div>
+    <div class="main">絶好調！</div>
+    <div class="en">Zekkōchō<br>We're on a roll!!</div>
+    <div style="height:14px"></div>
+    <div class="rb">どんどん　いこう</div>
+    <div class="main">どんどん行こう！</div>
+    <div class="en">Dondon ikō<br>Let's keep going!</div>
+    <div style="margin-top:14px; font-size:12px; opacity:.65;">(Tap anywhere)</div>
+  </div>
+</div>
+
+<!-- Result overlay -->
+  <div class="overlay" id="overlay">
+    <div class="panel" id="resultPanel">
+      <div class="panelTop">
+        <img class="btnImg exitBtn" id="overlayCloseBtn"
+             src="assets/ui/buttons/button-exit.png"
+             alt="Close" />
+      </div>
+
+      <img class="resultMsg" id="resultMsg"
+           src="assets/ui/messages/message-result-pin.png"
+           alt="Result" />
+
+      <div class="panelBtns">
+        <img class="btnImg continueBtn" id="continueBtn"
+             src="assets/ui/buttons/button-result-continue.png"
+             alt="Continue" />
+        <div class="panelMini">
+          <span id="panelScript" style="cursor:pointer; user-select:none;">
+            🔎 <span style="font-size:14px; color:rgba(255,255,255,.75); margin-left:6px;">Script</span>
+          </span>
+          <span class="saved" id="panelSave">
+            🔖 <span id="panelSaveText" style="font-size:14px; color:rgba(255,255,255,.75); margin-left:6px;">Save</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script sheet -->
+  <div class="sheet" id="sheet">
+    <div class="sheetInner">
+      <div class="sheetTop">
+        <img class="btnImg exitBtn" id="sheetExitBtn"
+             src="assets/ui/buttons/button-exit.png"
+             alt="Exit" />
+        <div style="opacity:.9; font-size:14px;">Script</div>
+      </div>
+
+      <div class="cols" id="scriptCols">
+        <div class="col" id="scriptJa"></div>
+        <div class="col" id="scriptEn"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ========= localStorage keys for result page ========= */
+const LS_LAST_SET   = "JPQ_LAST_SET_ID";
+const LS_LAST_SCORE = "JPQ_LAST_SCORE";
+const LS_LAST_TOTAL = "JPQ_LAST_TOTAL";
+
+/* ========= Data source ========= */
+const LS_SETS = "JPQ_SETS_CSV";
+const LS_QS   = "JPQ_QUESTIONS_CSV";
+const LS_UI   = "JPQ_UI_TEXT_CSV";
+
+async function getCSV(kind){
+  const key = (kind==="sets") ? LS_SETS : (kind==="questions") ? LS_QS : LS_UI;
+  const uploaded = localStorage.getItem(key);
+  if(uploaded) return uploaded;
+
+  const path = (kind==="sets") ? "data/sets.csv" :
+               (kind==="questions") ? "data/questions.csv" :
+               "data/ui_text.csv";
+  const res = await fetch(path);
+  if(!res.ok) return "";
+  return await res.text();
+}
+
+/* ========= CSV parser ========= */
+function parseCSV(text){
+  const rows=[];
+  let row=[], cur="", inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i], n=text[i+1];
+    if(c === '"'){
+      if(inQ && n === '"'){ cur+='"'; i++; }
+      else inQ=!inQ;
+    } else if(c === ',' && !inQ){
+      row.push(cur); cur="";
+    } else if((c==='\n' || c==='\r') && !inQ){
+      if(c==='\r' && n==='\n') i++;
+      row.push(cur);
+      if(row.some(v=>v.trim()!=="")) rows.push(row);
+      row=[]; cur="";
+    } else cur+=c;
+  }
+  row.push(cur);
+  if(row.some(v=>v.trim()!=="")) rows.push(row);
+
+  const header = rows.shift().map(h=>h.trim());
+  return rows.map(r=>{
+    const o={};
+    header.forEach((h,idx)=>o[h]=(r[idx]??"").trim());
+    return o;
+  });
+}
+
+/* ========= mini markup ========= */
+function decodeHTMLEntities(str){
+  // Turns "&lt;b&gt;" into "<b>" so tags/markup from CSV can render
+  const t = document.createElement("textarea");
+  t.innerHTML = String(str ?? "");
+  return t.value;
+}
+function escapeHTML(str){
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+function miniMarkupToHTML(s){
+  if(!s) return "";
+  // 1) decode entities first (so <b> etc works even if CSV escaped)
+  let out = decodeHTMLEntities(String(s));
+
+  // 2) allow simple tokens
+  out = out.replace(/\[br\]/gi, "<br>");
+
+  // 3) Ruby in two styles:
+  //    A) [ruby]漢字[rt]かんじ[/rt][/ruby]
+  //    B) <ruby>漢字<rt>かんじ</rt></ruby>  (already works after entity-decode)
+  out = out.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/gi, (_, rb, rt) => {
+    return `<ruby>${escapeHTML(rb)}<rt>${escapeHTML(rt)}</rt></ruby>`;
+  });
+
+  // 4) lightweight “BBCode-ish” styling
+  out = out.replace(/\[b\]([\s\S]*?)\[\/b\]/gi, "<b>$1</b>");
+  out = out.replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<span class="mk-i">$1</span>');
+  out = out.replace(/\[u\]([\s\S]*?)\[\/u\]/gi, "<u>$1</u>");
+  out = out.replace(/\[hl\]([\s\S]*?)\[\/hl\]/gi, '<span class="mk-hl">$1</span>');
+  out = out.replace(/\[big\]([\s\S]*?)\[\/big\]/gi, '<span class="mk-big">$1</span>');
+  out = out.replace(/\[small\]([\s\S]*?)\[\/small\]/gi, '<span class="mk-small">$1</span>');
+  out = out.replace(/\[thick\]([\s\S]*?)\[\/thick\]/gi, '<span class="thick">$1</span>');
+
+  return out;
+}
+
+/* ========= UI text map ========= */
+function buildUiTextMap(rows){
+  const m = new Map(); // ui|type -> text
+  for(const r of rows){
+    const ui = (r.ui || "").trim();
+    const key = (r.key || "").trim();
+    const text = (r.text || "").trim();
+    if(ui && key) m.set(`${ui}|${key}`, text);
+  }
+  return m;
+}
+
+/* ========= Saved questions (per set) ========= */
+const LS_SAVED_Q = "JPQ_SAVED_QIDS_BY_SET"; // { [setId]: [qId,...] }
+function getSavedMap(){
+  try{ return JSON.parse(localStorage.getItem(LS_SAVED_Q)||"{}"); }catch(e){ return {}; }
+}
+function getSavedIdsForSet(sid){
+  const m=getSavedMap();
+  const a=m[sid];
+  return Array.isArray(a)? a : [];
+}
+function setSavedIdsForSet(sid, arr){
+  const m=getSavedMap();
+  m[sid] = Array.from(new Set(arr));
+  localStorage.setItem(LS_SAVED_Q, JSON.stringify(m));
+}
+function isSavedQ(sid, qid){
+  return getSavedIdsForSet(sid).includes(qid);
+}
+function toggleSavedQ(sid, qid){
+  const arr = getSavedIdsForSet(sid);
+  const i = arr.indexOf(qid);
+  if(i>=0) arr.splice(i,1); else arr.push(qid);
+  setSavedIdsForSet(sid, arr);
+}
+
+/* ========= Quiz state ========= */
+const url = new URL(location.href);
+const setId = url.searchParams.get("set_id") || "";
+const mode  = (url.searchParams.get("mode") || "").toLowerCase(); // "review" | "saved"
+
+let allItems = [];       // full set items
+let items = [];          // current round items (subset)
+let idx = 0;
+let score = 0;
+let selectedIndex = null;
+
+let roundNum = 1;
+let remainingWrong = new Set(); // qIds not yet mastered
+let keepGoingShown = false;
+
+let correctIndexNow = 0;
+let uiMode = "en";
+let uiTextMap = new Map();
+
+/* ========= IMPORTANT: write last result for result.html ========= */
+function saveLastResult(){
+  localStorage.setItem(LS_LAST_SET, setId);
+  localStorage.setItem(LS_LAST_SCORE, String(score));
+  localStorage.setItem(LS_LAST_TOTAL, String(items.length || 1));
+}
+/* ========= Wrong tracking (Duolingo loop) ========= */
+const LS_WRONG_IDS_BY_SET = "JPQ_WRONG_IDS_BY_SET"; // { [setId]: [qId,...] }
+function getWrongMap(){
+  try{ return JSON.parse(localStorage.getItem(LS_WRONG_IDS_BY_SET)||"{}"); }catch(e){ return {}; }
+}
+function setWrongIdsForSet(sid, ids){
+  const m=getWrongMap();
+  m[sid] = Array.from(new Set(ids));
+  localStorage.setItem(LS_WRONG_IDS_BY_SET, JSON.stringify(m));
+}
+function getWrongIdsForSet(sid){
+  const m=getWrongMap();
+  const a=m[sid];
+  return Array.isArray(a)? a : [];
+}
+function persistWrong(){
+  setWrongIdsForSet(setId, Array.from(remainingWrong));
+  localStorage.setItem(`JPQ_WRONG_COUNT_${setId}`, String(remainingWrong.size));
+  localStorage.setItem(`JPQ_TRIED_${setId}`, "1");
+}
+
+/* ========= Stable QID ========= */
+function getQId(q, i){
+  return (q.q_id || q.id || q.question_id || "").trim() || `${setId}__${i+1}`;
+}
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+/* ========= Audio ========= */
+const audio = new Audio();
+audio.preload = "auto";
+audio.loop = true;
+
+const SFX = {
+  pin: new Audio("assets/ui/audio/sfx_pin.mp3"),
+  bu:  new Audio("assets/ui/audio/sfx_bu.mp3"),
+};
+
+function showPlayState(isPlaying){
+  document.getElementById("playBtn").style.display  = isPlaying ? "none" : "block";
+  document.getElementById("pauseBtn").style.display = isPlaying ? "block" : "none";
+}
+document.getElementById("playBtn").addEventListener("click", async ()=>{
+  try{ await audio.play(); showPlayState(true); }catch(e){}
+});
+document.getElementById("pauseBtn").addEventListener("click", ()=>{
+  audio.pause(); showPlayState(false);
+});
+
+/* ========= UI toggles ========= */
+function setUiMode(next){
+  uiMode = next;
+  document.getElementById("uiEn").classList.toggle("on", uiMode==="en");
+  document.getElementById("uiJa").classList.toggle("on", uiMode==="ja");
+  renderInstOnly();
+}
+document.getElementById("uiEn").addEventListener("click", ()=>setUiMode("en"));
+document.getElementById("uiJa").addEventListener("click", ()=>setUiMode("ja"));
+
+/* ========= Script sheet ========= */
+const sheet = document.getElementById("sheet");
+const qaScript = document.getElementById("qaScript");
+const panelScript = document.getElementById("panelScript");
+
+function openSheet(){
+  if(qaScript.classList.contains("disabled")) return;
+  sheet.classList.add("show");
+}
+function closeSheet(){ sheet.classList.remove("show"); }
+
+document.getElementById("sheetExitBtn").addEventListener("click", closeSheet);
+qaScript.addEventListener("click", openSheet);
+panelScript.addEventListener("click", openSheet);
+
+/* ========= Save toggles ========= */
+function syncSaveUI(){
+  const q = items[idx];
+  const qid = q ? q.__qid : "";
+  const on = !!qid && isSavedQ(setId, qid);
+  document.getElementById("qaSave").classList.toggle("on", on);
+  document.getElementById("panelSave").classList.toggle("on", on);
+  document.getElementById("panelSaveText").textContent = on ? "Saved" : "Save";
+}
+function toggleSave(){
+  const q = items[idx];
+  if(!q) return;
+  toggleSavedQ(setId, q.__qid);
+  syncSaveUI();
+}
+document.getElementById("qaSave").addEventListener("click", toggleSave);
+document.getElementById("panelSave").addEventListener("click", toggleSave);
+
+/* ========= Exit confirm bar ========= */
+const exitBar = document.getElementById("exitBar");
+function showExitBar(on){ exitBar.classList.toggle("show", !!on); }
+document.getElementById("exitBtn").addEventListener("click", ()=>{
+  showExitBar(!exitBar.classList.contains("show"));
+});
+document.getElementById("exitContinue").addEventListener("click", ()=> showExitBar(false));
+document.getElementById("exitQuit").addEventListener("click", ()=>{
+  saveLastResult();              // ✅ so result shows real percent even on quit
+  location.href = "result.html";
+});
+
+/* ========= Result overlay ========= */
+const overlay = document.getElementById("overlay");
+const resultPanel = document.getElementById("resultPanel");
+
+/* ========= Keep-going modal ========= */
+const keepGoingModal = document.getElementById("keepGoingModal");
+const keepGoingImg = document.getElementById("keepGoingImg");
+const keepGoingFallback = document.getElementById("keepGoingFallback");
+if(keepGoingImg){
+  keepGoingImg.addEventListener("error", ()=>{
+    if(keepGoingFallback) keepGoingFallback.style.display = "block";
+  });
+}
+function showKeepGoingModal(){
+  return new Promise((resolve)=>{
+    if(!keepGoingModal){ resolve(); return; }
+    keepGoingModal.classList.add("show");
+    keepGoingModal.setAttribute("aria-hidden","false");
+    const close = ()=>{
+      keepGoingModal.classList.remove("show");
+      keepGoingModal.setAttribute("aria-hidden","true");
+      keepGoingModal.removeEventListener("click", close);
+      resolve();
+    };
+    keepGoingModal.addEventListener("click", close);
+  });
+}
+
+function showResult(correct){
+  showExitBar(false);
+  overlay.classList.remove("show");
+
+  overlay.style.background = correct
+    ? "rgba(120,190,255,.30)"
+    : "rgba(255,120,120,.26)";
+
+  resultPanel.style.background = correct ? "#16384f" : "#3a1a1c";
+  resultPanel.style.borderColor = correct
+    ? "rgba(120,190,255,.65)"
+    : "rgba(255,120,120,.55)";
+
+  document.getElementById("resultMsg").src = correct
+    ? "assets/ui/messages/message-result-pin.png"
+    : "assets/ui/messages/message-result-bu.png";
+
+  try{
+    const s = correct ? SFX.pin : SFX.bu;
+    s.currentTime = 0;
+    s.play();
+  }catch(e){}
+
+  setTimeout(()=> overlay.classList.add("show"), 220);
+}
+
+function hideResult(){ overlay.classList.remove("show"); }
+document.getElementById("overlayCloseBtn").addEventListener("click", hideResult);
+
+document.getElementById("continueBtn").addEventListener("click", async ()=>{
+  hideResult();
+
+  if(idx < items.length - 1){
+    idx++;
+    render();
+    return;
+  }
+
+  // End of round: loop wrongs until empty
+  if(remainingWrong.size > 0){
+    if(roundNum === 1 && !keepGoingShown){
+      keepGoingShown = true;
+      await showKeepGoingModal();
+    }
+
+    roundNum += 1;
+    const wrongIds = Array.from(remainingWrong);
+
+    items = wrongIds.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
+    idx = 0;
+    render();
+    return;
+  }
+
+  // mastered all
+  score = allItems.length;
+  persistWrong();
+  saveLastResult();
+  location.href = "result.html";
+});
+
+/* ========= Rendering ========= */
+function getInstText(qType){
+  const key = `${uiMode}|${qType}`;
+  const t = uiTextMap.get(key);
+  if(t) return t;
+  return (uiMode==="ja") ? "聞きましょう。" : "Listen";
+}
+
+function renderImages(imageFiles){
+  const grid = document.getElementById("imgGrid");
+  grid.innerHTML = "";
+  const parts = (imageFiles||"").split("|").map(s=>s.trim()).filter(Boolean);
+  if(parts.length===0){ grid.style.display="none"; return; }
+  grid.style.display="grid";
+  for(const src of parts){
+    const card = document.createElement("div");
+    card.className="imgCard";
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "";
+    card.appendChild(img);
+    grid.appendChild(card);
+  }
+}
+
+function renderChoices(q){
+  const wrap = document.getElementById("choices");
+  wrap.innerHTML = "";
+  selectedIndex = null;
+
+  const rawParts = (q.choices_text || "").split("|").map(v => v.trim()).filter(Boolean);
+  const pairs = rawParts.map((text, origIdx) => ({ text, origIdx }));
+
+  // Detect "listen-only type 1" robustly (use either column name)
+  const qtRaw = String((q.type || q.q_type || "")).trim();
+  const noShuffle =
+    /^1$/.test(qtRaw) ||
+    /^1\b/.test(qtRaw) ||
+    /^q[_-]?type[_-]?1$/i.test(qtRaw) ||
+    /^qtype1$/i.test(qtRaw);
+
+  const shown = noShuffle ? pairs : shuffle(pairs);
+
+  // Answer index: support 0-based and 1-based CSV
+  let correctOrig = parseInt(q.answer_index || "0", 10);
+  if(!Number.isFinite(correctOrig)) correctOrig = 0;
+  if(correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
+    correctOrig = correctOrig - 1;
+  }
+  correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
+
+  const long = shown.some(p => (p.text || "").length > 22);
+  wrap.classList.toggle("twoCol", !long);
+
+  shown.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.className = "choiceBtn";
+    b.innerHTML = miniMarkupToHTML(p.text);
+    b.addEventListener("click", () => {
+      selectedIndex = i;
+      [...wrap.children].forEach(el => el.classList.remove("active"));
+      b.classList.add("active");
+    });
+    wrap.appendChild(b);
+  });
+}
+
+function renderInstOnly
+(){
+  const q = items[idx];
+  if(!q) return;
+  document.getElementById("instText").innerHTML = miniMarkupToHTML(getInstText(q.type));
+}
+
+function setScriptAvailability(hasAny){
+  qaScript.classList.toggle("disabled", !hasAny);
+  panelScript.style.opacity = hasAny ? "1" : ".28";
+  panelScript.style.pointerEvents = hasAny ? "auto" : "none";
+}
+
+function renderScriptBoxes(q){
+  const jaRaw = (q.script_ja || "").trim();
+  const enRaw = (q.script_en || "").trim();
+
+  const jaEl = document.getElementById("scriptJa");
+  const enEl = document.getElementById("scriptEn");
+  const colsEl = document.getElementById("scriptCols");
+
+  const hasJa = jaRaw.length > 0;
+  const hasEn = enRaw.length > 0;
+
+  jaEl.classList.toggle("hidden", !hasJa);
+  enEl.classList.toggle("hidden", !hasEn);
+
+  if(hasJa) jaEl.innerHTML = miniMarkupToHTML(jaRaw);
+  if(hasEn) enEl.innerHTML = miniMarkupToHTML(enRaw);
+
+  colsEl.classList.toggle("oneCol", (hasJa && !hasEn) || (!hasJa && hasEn));
+  setScriptAvailability(hasJa || hasEn);
+
+  if(sheet.classList.contains("show") && !(hasJa || hasEn)){
+    sheet.classList.remove("show");
+  }
+}
+
+function render(){
+  const q = items[idx];
+  if(!q) return;
+
+  showExitBar(false);
+
+  document.getElementById("qCount").textContent = `R${roundNum} • Q: ${idx+1}/${items.length}`;
+  document.getElementById("scoreBox").textContent = `Score: ${score}/${allItems.length}`;
+
+  renderInstOnly();
+
+  document.getElementById("promptJa").innerHTML = miniMarkupToHTML((q.prompt_ja || "").trim());
+  document.getElementById("promptEn").innerHTML = miniMarkupToHTML((q.prompt_en || "").trim());
+
+  renderImages(q.image_files || "");
+
+  audio.src = q.audio_file || "";
+  audio.pause();
+  showPlayState(false);
+
+  renderChoices(q);
+  renderScriptBoxes(q);
+
+  syncSaveUI();
+}
+
+/* ========= Check ========= */
+document.getElementById("checkBtn").addEventListener("click", ()=>{
+  const q = items[idx];
+  if(!q) return;
+
+  const qid = q.__qid;
+  const ok = (selectedIndex !== null) && (selectedIndex === correctIndexNow);
+
+  // Score = unique mastered count
+  if(ok && remainingWrong.has(qid)) score += 1;
+
+  if(ok) remainingWrong.delete(qid);
+  else   remainingWrong.add(qid);
+
+  persistWrong();
+  saveLastResult();
+
+  showResult(ok);
+});
+
+/* ========= Keyboard ========= */
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "Escape"){
+    overlay.classList.remove("show");
+    sheet.classList.remove("show");
+    showExitBar(false);
+  }
+});
+
+/* ========= Init ========= */
+(async function init(){
+  if(!setId){
+    alert("Missing set_id.");
+    location.href = "menu.html";
+    return;
+  }
+
+  const qsCSV = await getCSV("questions");
+  if(!qsCSV){
+    alert("questions.csv not available. Open upload.html and upload CSV files.");
+    location.href = "upload.html";
+    return;
+  }
+
+  const uiCSV = await getCSV("ui");
+  if(uiCSV){
+    uiTextMap = buildUiTextMap(parseCSV(uiCSV));
+  }
+
+  const all = parseCSV(qsCSV);
+  allItems = all.filter(r => r.set_id === setId);
+  allItems.forEach((q,i)=>{ q.__qid = getQId(q,i); });
+  items = [...allItems];
+// Mode: review = load only wrong questions saved for this set
+if(mode === "review"){
+  const ids = getWrongIdsForSet(setId);
+  if(ids.length === 0){
+    alert("No wrong questions saved for this quiz yet.");
+    location.href = "menu.html";
+    return;
+  }
+  items = ids.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
+  roundNum = 1;
+  remainingWrong = new Set(ids);
+  score = 0;
+  saveLastResult();
+  persistWrong();
+  render();
+  return;
+}
+
+// Mode: saved = load only saved questions for this set
+if(mode === "saved"){
+  const ids = getSavedIdsForSet(setId);
+  if(ids.length === 0){
+    alert("No saved questions yet for this quiz.");
+    location.href = "menu.html";
+    return;
+  }
+  items = ids.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
+  roundNum = 1;
+  remainingWrong = new Set(ids);
+  score = 0;
+  saveLastResult();
+  persistWrong();
+  render();
+  return;
+}
+
+
+
+  if(allItems.length === 0){
+    alert("No questions found for this set_id.");
+    location.href = "menu.html";
+    return;
+  }
+
+  // initialize last result (so even first open has correct total)
+  roundNum = 1;
+  remainingWrong = new Set(allItems.map(q=>q.__qid));
+  score = 0;
+
+  saveLastResult();
+  persistWrong();
+  render();
+})();
+</script>
+</body>
+</html>
