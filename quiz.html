@@ -547,15 +547,15 @@ u{ text-underline-offset: .18em; }
 <script>
 /* =========================================================
    Quiz (GitHub-friendly, no user CSV upload)
-   - Loads questions.csv / sets.csv / ui_text.csv via fetch()
+   - Loads data/questions.csv / data/sets.csv / data/ui_text.csv via fetch()
    - Supports input typing questions (type = input or q_type_input)
    - Keeps existing UI and result saving keys
 ========================================================= */
 
 const FILES = {
-  questions: "questions.csv",
-  sets: "sets.csv",
-  ui: "ui_text.csv",
+  questions: "data/questions.csv",
+  sets: "data/sets.csv",
+  ui: "data/ui_text.csv",
 };
 
 const LS = {
@@ -565,7 +565,7 @@ const LS = {
   WRONG_IDS: "JPQ_LAST_WRONG",
 };
 
-const DEFAULT_SET_FALLBACK = ""; // if empty, uses first published set in sets.csv
+const DEFAULT_SET_FALLBACK = ""; // if empty, uses first published set in data/sets.csv
 
 // ===== DOM =====
 const els = {
@@ -618,7 +618,7 @@ let typedAnswer = "";
 const audio = new Audio();
 audio.preload = "auto";
 
-let uiTextMap = {}; // optional ui_text.csv
+let uiTextMap = {}; // optional data/ui_text.csv
 
 // =========================================================
 // CSV loader (fetch from GitHub)
@@ -1121,7 +1121,7 @@ async function boot(){
 
     setId = requested || last || fallback || firstPublished || "";
     if(!setId){
-      alert("No set_id found. Please add sets.csv and questions.csv to the repo.");
+      alert("No set_id found. Please add data/sets.csv and data/questions.csv to the repo.");
       location.href = "menu.html";
       return;
     }
@@ -1153,7 +1153,7 @@ async function boot(){
 
   }catch(e){
     console.error(e);
-    alert("Could not load CSV from GitHub. Make sure questions.csv and sets.csv are in the same folder as quiz.html.");
+    alert("Could not load CSV from GitHub. Make sure data/questions.csv and data/sets.csv are in the same folder as quiz.html.");
     location.href = "menu.html";
   }
 }
