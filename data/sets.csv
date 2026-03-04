@@ -1,16 +1,16 @@
-﻿set_id,level_cefr,level_jlpt,topic_id,topic_title_en,topic_title_ja,quiz_title_en,quiz_title_ja,is_published,sort_order
-n5_t001_q001,A1,N5,n5_t001,Topic 1: Nice to meet you,01. [ruby]初[rt]はじ[/rt][/ruby]めまして,01. I'm Tanaka,[ruby]田中[rt]たなか[/rt][/ruby]です,1,10
-n5_t001_q002,A1,N5,n5_t001,Topic 1: Nice to meet you,02. [ruby]初[rt]はじ[/rt][/ruby]めまして,02. What's your name?,お[ruby]名前[rt]なまえ[/rt][/ruby]は？,1,20
-n5_t002_q001,A1,N5,n5_t002,Topic 3: Where am I?,03. ここはどこ？,03. You are on 5th avenue,ここは5[ruby]番街[rt]ばんがい[/rt][/ruby]です,1,30
-n4_t001_q001,A2,N4,n4_t001,xyz,〇〇,Title,タイトル,1,40
-n4_t001_q002,A2,N4,n4_t001,xyz,〇〇,Title,タイトル,1,50
-n3_t001_q001,B1,N3,n3_t001,xyz,〇〇,Title,タイトル,1,60
-n3_t001_q002,B1,N3,n3_t001,xyz,〇〇,Title,タイトル,1,70
-n2_t001_q001,B2,N2,n2_t001,xyz,〇〇,Title,タイトル,1,80
-n2_t001_q002,B2,N2,n2_t001,xyz,〇〇,Title,タイトル,1,90
-n1_t001_q001,C1,N1,n1_t001,xyz,〇〇,Title,タイトル,1,100
-n1_t001_q002,C1,N1,n1_t001,xyz,〇〇,Title,タイトル,1,110
-n5_l01_1,A1,N5,l01_1,Lesson 1: ,①,①,①,1,200
-n4_l01_1,A1,N5,l01_1,Lesson 1: ,②,②,②,1,200
-n4_l01_1,A1,N5,l01_1,Lesson 1: ,③,③,③,1,200
-l1_l01_1,A1,N5,l01_1,Lesson 1: ,④,④,④,1,200
+﻿set_id,level_cefr,level_jlpt,topic_id,topic_title_en,topic_title_ja,quiz_title_en,quiz_title_ja,is_published,sort_order,
+n5_t001_q001,A1,N5,n5_t001,Topic 1: Nice to meet you,01. [ruby]初[rt]はじ[/rt][/ruby]めまして,01. I'm Tanaka,[ruby]田中[rt]たなか[/rt][/ruby]です,1,10,
+n5_t001_q002,A1,N5,n5_t001,Topic 1: Nice to meet you,02. [ruby]初[rt]はじ[/rt][/ruby]めまして,02. What's your name?,お[ruby]名前[rt]なまえ[/rt][/ruby]は？,1,20,
+n5_t002_q001,A1,N5,n5_t002,Topic 3: Where am I?,03. ここはどこ？,03. You are on 5th avenue,ここは5[ruby]番街[rt]ばんがい[/rt][/ruby]です,1,30,
+n4_t001_q001,A2,N4,n4_t001,xyz,〇〇,Title,タイトル,1,40,
+n4_t001_q002,A2,N4,n4_t001,xyz,〇〇,Title,タイトル,1,50,
+n3_t001_q001,B1,N3,n3_t001,xyz,〇〇,Title,タイトル,1,60,
+n3_t001_q002,B1,N3,n3_t001,xyz,〇〇,Title,タイトル,1,70,
+n2_t001_q001,B2,N2,n2_t001,xyz,〇〇,Title,タイトル,1,80,
+n2_t001_q002,B2,N2,n2_t001,xyz,〇〇,Title,タイトル,1,90,
+n1_t001_q001,C1,N1,n1_t001,xyz,〇〇,Title,タイトル,1,100,
+n1_t001_q002,C1,N1,n1_t001,xyz,〇〇,Title,タイトル,1,110,
+n5_l01_1,A1,N5,l01_1,Lesson 1: ,①,①,①,1,200,
+n4_l01_1,A1,N5,l01_1,Lesson 1: ,②,②,②,1,200,
+n4_l01_1,A1,N5,l01_1,Lesson 1: ,③,③,③,1,200,
+l1_l01_1,A1,N5,l01_1,Lesson 1: ,④,④,④,1,200,01. [ruby]初[rt]はじ[/rt][/ruby]めまして01. I'm Tanaka[ruby]田中[rt]たなか[/rt][/ruby]です124
