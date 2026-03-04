@@ -226,6 +226,7 @@
     }
     .qa.save{ opacity:.35; }
     .qa.save.on{ opacity:1; }
+    .qa .sub{ font-size:12px; color:var(--muted); }
 
     /* ===== Exit confirm bar ===== */
     .exitBar{
@@ -381,7 +382,7 @@
       .cols{ grid-template-columns: 1fr; }
     }
 
-    /* ===== mini-markup styles (MATCHES JS) ===== */
+    /* ===== mini-markup styles (JSが出す class と一致) ===== */
     .mk-hl{ background:rgba(255,255,0,.25); padding:0 .22em; border-radius:.28em; }
     .mk-big{ font-size:1.22em; font-weight:900; }
     .mk-small{ font-size:.86em; opacity:.98; }
@@ -458,7 +459,7 @@
            alt="Check" />
       <div class="rightActions">
         <div class="qa" id="qaScript">🔎 <span class="sub">Script</span></div>
-        <div class="qa save" id="qaSave">🔖 <span class="sub" id="saveText">Saved</span></div>
+        <div class="qa save" id="qaSave">🔖 <span class="sub" id="saveText">Save</span></div>
       </div>
     </div>
   </div>
@@ -473,7 +474,7 @@
       </div>
 
       <img class="resultMsg" id="resultMsg"
-           src="assets/ui/messages/message-result-pin.png"
+           src="assets/ui/messages/message-result-yatta.png"
            alt="Result" />
 
       <div class="panelBtns">
@@ -511,17 +512,32 @@
 
 <script>
 /* =========================================================
-   quiz.html (single-file, GitHub Pages)
-   - Loads: data/sets.csv, data/questions.csv (ui_text optional)
-   - MCQ + typing input
-   - Audio play/pause
-   - Result overlay: image swap + SFX
+   Quiz (GitHub Pages, stable)
+   - CSV: data/sets.csv, data/questions.csv, (optional) data/ui_text.csv
+   - Audio: question audio_file (mp3)
+   - SFX: assets/ui/audio/sfx_applause.mp3 (correct)
+          assets/ui/audio/sfx_bu.mp3       (wrong)
+          assets/ui/audio/sfx_pin.mp3      (save)
+   - Overlay image switches:
+       ok  => assets/ui/messages/message-result-yatta.png
+       ng  => assets/ui/messages/message-result-bu.png
+     (If missing, auto-fallback to message-result-pin.png)
 ========================================================= */
 
 const FILES = {
   sets: "data/sets.csv",
   questions: "data/questions.csv",
   ui: "data/ui_text.csv", // optional
+};
+
+const ASSETS = {
+  result_ok: "assets/ui/messages/message-result-yatta.png",
+  result_ng: "assets/ui/messages/message-result-bu.png",
+  result_fallback: "assets/ui/messages/message-result-pin.png",
+
+  sfx_ok: "assets/ui/audio/sfx_applause.mp3",
+  sfx_ng: "assets/ui/audio/sfx_bu.mp3",
+  sfx_save: "assets/ui/audio/sfx_pin.mp3",
 };
 
 const LS = {
@@ -532,24 +548,14 @@ const LS = {
   SAVED:       "JPQ_SAVED_QIDS",
 };
 
-// ===== YOU MAY NEED TO CHANGE THESE FILENAMES =====
-const RESULT_IMG_OK = "assets/ui/messages/message-result-correct.png";
-const RESULT_IMG_NG = "assets/ui/messages/message-result-wrong.png";
-
-const SFX_OK = "assets/ui/sfx_pin.mp3";
-const SFX_NG = "assets/ui/sfx_bu.mp3";
-
-// ===== DOM =====
 const els = {
   // top
   exitBtn: document.getElementById("exitBtn"),
   exitBar: document.getElementById("exitBar"),
   exitContinue: document.getElementById("exitContinue"),
   exitQuit: document.getElementById("exitQuit"),
-
   qCount: document.getElementById("qCount"),
   scoreBox: document.getElementById("scoreBox"),
-
   uiEn: document.getElementById("uiEn"),
   uiJa: document.getElementById("uiJa"),
 
@@ -589,20 +595,21 @@ const els = {
   scriptEn: document.getElementById("scriptEn"),
 };
 
-// ===== Audio =====
+// -------- audio objects --------
 const qAudio = new Audio();
 qAudio.preload = "auto";
 
 const sfx = new Audio();
 sfx.preload = "auto";
+sfx.volume = 1.0;
 
-// ===== State =====
-let uiLang = "en"; // "en" | "ja"
+// -------- app state --------
+let uiLang = "en";
 let uiTextMap = {};
 
 let setId = "";
-let setsRows = [];
-let qRowsAll = [];
+let setMeta = null;
+let allSets = [];
 let qRows = [];
 let idx = 0;
 
@@ -615,7 +622,9 @@ let typedAnswer = "";
 
 let savedQids = new Set();
 
-// ---------------- CSV helpers ----------------
+// =========================================================
+// CSV helpers
+// =========================================================
 function stripBOM(s){ return (s && s.charCodeAt(0) === 0xFEFF) ? s.slice(1) : s; }
 
 function parseCSV(text){
@@ -650,6 +659,7 @@ function parseCSV(text){
     if (row.some(c => (c||"").trim() !== "")) rows.push(row);
   }
   if (!rows.length) return [];
+
   const header = rows[0].map(h => (h||"").trim());
   const out = [];
   for (let r=1;r<rows.length;r++){
@@ -681,7 +691,9 @@ function t(key, fallback){
   return (uiTextMap && uiTextMap[key]) ? uiTextMap[key] : fallback;
 }
 
-// ---------------- mini-markup ----------------
+// =========================================================
+// mini markup
+// =========================================================
 function escapeHTML(s){
   return (s||"").replace(/[&<>"']/g, m => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -691,6 +703,7 @@ function miniMarkupToHTML(s){
   s = s || "";
   s = s.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g,
     (_, a, b)=> `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`);
+
   s = s.replace(/\[b\]([\s\S]*?)\[\/b\]/g, `<span class="mk-b">$1</span>`);
   s = s.replace(/\[i\]([\s\S]*?)\[\/i\]/g, `<span class="mk-i">$1</span>`);
   s = s.replace(/\[u\]([\s\S]*?)\[\/u\]/g, `<span class="mk-u">$1</span>`);
@@ -700,7 +713,9 @@ function miniMarkupToHTML(s){
   return s;
 }
 
-// ---------------- question type ----------------
+// =========================================================
+// question type
+// =========================================================
 function isInputQuestion(q){
   const raw = String((q.type || q.q_type || "")).trim().toLowerCase();
   return raw === "input" || raw === "typing" || raw === "q_type_input" || raw === "type_input";
@@ -714,20 +729,9 @@ function shuffle(arr){
   return a;
 }
 
-// ---------------- typing compare ----------------
-function kataToHira(str){
-  return (str||"").replace(/[\u30A1-\u30F6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
-}
-function normalizeKana(str){ return kataToHira((str||"").trim()); }
-function normalizeRomaji(str){
-  let out = (str||"").trim().toLowerCase().replace(/\s+/g,"").replace(/'/g,"");
-  out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
-  out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
-  return out;
-}
-function isKanaLike(str){ return /[\u3040-\u30FF]/.test(str||""); }
-function acceptPartial(u, t){ return u && u.length>=2 && (t||"").includes(u); }
-
+// =========================================================
+// typing compare
+// =========================================================
 function extractBracketAnswer(promptJa){
   const m = String(promptJa||"").match(/\[([^\]]+)\]/);
   return m ? m[1].trim() : "";
@@ -739,9 +743,25 @@ function getAcceptedAnswers(q){
   if (br) return [br];
   return [];
 }
+function kataToHira(str){
+  return (str||"").replace(/[\u30A1-\u30F6]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+}
+function normalizeKana(str){ return kataToHira((str||"").trim()); }
+function normalizeRomaji(str){
+  let out = (str||"").trim().toLowerCase().replace(/\s+/g,"").replace(/'/g,"");
+  out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
+  out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
+  return out;
+}
+function isKanaLike(str){ return /[\u3040-\u30FF]/.test(str||""); }
+function acceptPartial(u, t){ return u && u.length>=2 && (t||"").includes(u); }
+
 function checkTyped(q, userRaw){
   const acc = getAcceptedAnswers(q);
   if (!acc.length) return false;
+
   const uRaw = (userRaw||"").trim();
   if (!uRaw) return false;
 
@@ -756,7 +776,9 @@ function checkTyped(q, userRaw){
   }
 }
 
-// ---------------- saved ----------------
+// =========================================================
+// saved set
+// =========================================================
 function loadSavedSet(){
   try{
     const raw = localStorage.getItem(LS.SAVED);
@@ -770,100 +792,30 @@ function loadSavedSet(){
 function persistSavedSet(){
   localStorage.setItem(LS.SAVED, JSON.stringify([...savedQids]));
 }
+function updateSavedUI(qid){
+  const on = savedQids.has(qid);
+  els.qaSave.classList.toggle("on", on);
+  els.panelSave.classList.toggle("on", on);
+  els.saveText.textContent = on ? "Saved" : "Save";
+  els.panelSaveText.textContent = on ? "Saved" : "Save";
+}
 
-// ---------------- UI language ----------------
+// =========================================================
+// UI helpers
+// =========================================================
+function getParam(name){
+  const url = new URL(location.href);
+  return url.searchParams.get(name);
+}
 function setUiLang(lang){
   uiLang = lang;
   els.uiEn.classList.toggle("on", uiLang==="en");
   els.uiJa.classList.toggle("on", uiLang==="ja");
-
-  // instruction text (you can later map to ui_text.csv if you want)
-  els.instText.textContent = (uiLang==="ja")
-    ? t("inst_listen_ja", "Listen (kiki mashō)")
-    : t("inst_listen_en", "Listen (kiki mashō)");
 }
 
-// ---------------- audio ----------------
-function setQuestionAudio(src){
-  if (!src){
-    qAudio.removeAttribute("src");
-    els.playBtn.style.opacity = ".35";
-    els.playBtn.style.pointerEvents = "none";
-    els.pauseBtn.style.display = "none";
-    els.playBtn.style.display = "";
-    return;
-  }
-  qAudio.src = src;
-  els.playBtn.style.opacity = "1";
-  els.playBtn.style.pointerEvents = "auto";
-}
-
-function playQuestionAudio(){
-  if (!qAudio.src) return;
-  qAudio.currentTime = 0;
-  qAudio.play().then(()=>{
-    els.playBtn.style.display = "none";
-    els.pauseBtn.style.display = "";
-  }).catch(()=>{});
-}
-function pauseQuestionAudio(){
-  qAudio.pause();
-  els.pauseBtn.style.display = "none";
-  els.playBtn.style.display = "";
-}
-qAudio.addEventListener("ended", ()=>{
-  els.pauseBtn.style.display = "none";
-  els.playBtn.style.display = "";
-});
-
-// SFX
-function playSfx(ok){
-  const src = ok ? SFX_OK : SFX_NG;
-  sfx.src = src;
-  sfx.currentTime = 0;
-  sfx.play().catch(() => {
-    // fallback beep
-    try{
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = ok ? 880 : 220;
-      g.gain.value = 0.06;
-      o.connect(g); g.connect(ctx.destination);
-      o.start();
-      setTimeout(()=>{ o.stop(); ctx.close(); }, 120);
-    }catch{}
-  });
-}
-
-// ---------------- overlay / sheet ----------------
-function showOverlay(ok){
-  // image swap
-  if (els.resultMsg){
-    els.resultMsg.src = ok ? RESULT_IMG_OK : RESULT_IMG_NG;
-    els.resultMsg.alt = ok ? "Correct" : "Wrong";
-  }
-  // sfx
-  playSfx(ok);
-
-  els.overlay.classList.add("show");
-  els.overlay.setAttribute("aria-hidden", "false");
-}
-function hideOverlay(){
-  els.overlay.classList.remove("show");
-  els.overlay.setAttribute("aria-hidden", "true");
-}
-function showSheet(){
-  els.sheet.classList.add("show");
-  els.sheet.setAttribute("aria-hidden", "false");
-}
-function hideSheet(){
-  els.sheet.classList.remove("show");
-  els.sheet.setAttribute("aria-hidden", "true");
-}
-
-// ---------------- render helpers ----------------
+// =========================================================
+// render
+// =========================================================
 function renderImages(q){
   els.imgGrid.innerHTML = "";
   const imgs = (q.image_files || "").split("|").map(s=>s.trim()).filter(Boolean);
@@ -886,6 +838,7 @@ function renderImages(q){
 function renderScript(q){
   const ja = (q.script_ja || "").trim();
   const en = (q.script_en || "").trim();
+
   els.scriptJa.innerHTML = miniMarkupToHTML(ja || "");
   els.scriptEn.innerHTML = miniMarkupToHTML(en || "");
 
@@ -898,24 +851,25 @@ function renderScript(q){
   }
 }
 
-function renderChoices(q){
+function renderMCQ(q){
   els.choices.innerHTML = "";
   els.choices.classList.remove("twoCol");
   selectedIndex = null;
-  correctIndexNow = 0;
 
   const rawParts = (q.choices_text || "").split("|").map(v=>v.trim()).filter(Boolean);
   const pairs = rawParts.map((text, origIdx)=>({ text, origIdx }));
 
   const qt = String((q.type || q.q_type || "")).trim().toLowerCase();
-  const noShuffle = (qt === "q_type_1_listen_only");
+  const noShuffle = (qt === "q_type_1_listen_only"); // your Type 1
   const shown = noShuffle ? pairs : shuffle(pairs);
 
+  // answer_index supports 0-based OR 1-based
   let correctOrig = parseInt(q.answer_index || "0", 10);
   if (!Number.isFinite(correctOrig)) correctOrig = 0;
   if (correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
     correctOrig = correctOrig - 1;
   }
+
   correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
   if (correctIndexNow < 0) correctIndexNow = 0;
 
@@ -974,45 +928,123 @@ function renderTyping(q){
   setTimeout(()=>input.focus(), 60);
 }
 
-function updateSavedUI(qid){
-  const on = savedQids.has(qid);
-  els.qaSave.classList.toggle("on", on);
-  els.panelSave.classList.toggle("on", on);
-  els.saveText.textContent = on ? "Saved" : "Save";
-  els.panelSaveText.textContent = on ? "Saved" : "Save";
+function setQuestionAudio(src){
+  if (!src){
+    qAudio.removeAttribute("src");
+    els.playBtn.style.opacity = ".35";
+    els.playBtn.style.pointerEvents = "none";
+    els.pauseBtn.style.display = "none";
+    els.playBtn.style.display = "";
+    return;
+  }
+  qAudio.src = src;
+  els.playBtn.style.opacity = "1";
+  els.playBtn.style.pointerEvents = "auto";
 }
 
 function render(){
   const q = qRows[idx];
 
+  // pills
   els.qCount.textContent = `Q: ${idx+1}/${qRows.length}`;
   els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
 
+  // instruction text (very simple for now)
+  els.instText.textContent = (uiLang==="ja")
+    ? t("inst_listen_ja", "Listen (kiki mashō)")
+    : t("inst_listen_en", "Listen (kiki mashō)");
+
+  // prompt
   els.promptJa.innerHTML = miniMarkupToHTML(q.prompt_ja || "");
   els.promptEn.textContent = q.prompt_en || "";
 
+  // images
   renderImages(q);
+
+  // script
   renderScript(q);
 
+  // choices / typing
+  if (isInputQuestion(q)) renderTyping(q);
+  else renderMCQ(q);
+
+  // audio
   setQuestionAudio(q.audio_file || "");
 
-  if (isInputQuestion(q)) renderTyping(q);
-  else renderChoices(q);
-
+  // saved UI
   const qid = (q.question_id || `${idx}`);
   updateSavedUI(qid);
 
+  // close overlays/sheets
   hideOverlay();
-  // sheetは閉じない（好みで）：ここでは閉じる
   hideSheet();
 }
 
-// ---------------- flow ----------------
-function getParam(name){
-  const url = new URL(location.href);
-  return url.searchParams.get(name);
+// =========================================================
+// overlay + sfx
+// =========================================================
+function playSfx(src){
+  if (!src) return;
+  try{
+    sfx.pause();
+    sfx.currentTime = 0;
+    sfx.src = src;
+    sfx.play().catch(()=>{});
+  }catch(_e){}
 }
 
+function setResultImage(ok){
+  const target = ok ? ASSETS.result_ok : ASSETS.result_ng;
+  els.resultMsg.onerror = () => { els.resultMsg.src = ASSETS.result_fallback; };
+  els.resultMsg.src = target;
+}
+
+function showOverlay(ok){
+  setResultImage(ok);
+  els.overlay.classList.add("show");
+  els.overlay.setAttribute("aria-hidden", "false");
+
+  // SFX
+  playSfx(ok ? ASSETS.sfx_ok : ASSETS.sfx_ng);
+}
+function hideOverlay(){
+  els.overlay.classList.remove("show");
+  els.overlay.setAttribute("aria-hidden", "true");
+}
+
+function showSheet(){
+  els.sheet.classList.add("show");
+  els.sheet.setAttribute("aria-hidden", "false");
+}
+function hideSheet(){
+  els.sheet.classList.remove("show");
+  els.sheet.setAttribute("aria-hidden", "true");
+}
+
+// =========================================================
+// question audio controls
+// =========================================================
+function playQuestionAudio(){
+  if (!qAudio.src) return;
+  qAudio.currentTime = 0;
+  qAudio.play().then(()=>{
+    els.playBtn.style.display = "none";
+    els.pauseBtn.style.display = "";
+  }).catch(()=>{});
+}
+function pauseQuestionAudio(){
+  qAudio.pause();
+  els.pauseBtn.style.display = "none";
+  els.playBtn.style.display = "";
+}
+qAudio.addEventListener("ended", ()=>{
+  els.pauseBtn.style.display = "none";
+  els.playBtn.style.display = "";
+});
+
+// =========================================================
+// flow
+// =========================================================
 function finish(){
   localStorage.setItem(LS.LAST_SET_ID, setId);
   localStorage.setItem(LS.LAST_TOTAL, String(qRows.length));
@@ -1021,18 +1053,20 @@ function finish(){
   localStorage.setItem(LS.WRONG_IDS, JSON.stringify(wrongIds));
   location.href = "result.html";
 }
-
-function nextQuestion(){
+function next(){
   idx += 1;
   if (idx >= qRows.length){
     finish();
     return;
   }
   render();
+  // optional auto-play
   playQuestionAudio();
 }
 
-// ---------------- events ----------------
+// =========================================================
+// events
+// =========================================================
 els.playBtn.addEventListener("click", playQuestionAudio);
 els.pauseBtn.addEventListener("click", pauseQuestionAudio);
 
@@ -1052,15 +1086,16 @@ els.checkBtn.addEventListener("click", ()=>{
     wrongIds.push(q.question_id || String(idx));
   }
 
+  // update pill immediately
   els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
 
-  // ✅ correct/wrong image + sfx
+  // show overlay (this is where ○/× + SFX happen)
   showOverlay(ok);
 });
 
 els.continueBtn.addEventListener("click", ()=>{
   hideOverlay();
-  nextQuestion();
+  next();
 });
 els.overlayCloseBtn.addEventListener("click", hideOverlay);
 
@@ -1078,29 +1113,36 @@ els.sheetExitBtn.addEventListener("click", hideSheet);
 function toggleSaveCurrent(){
   const q = qRows[idx];
   const qid = (q.question_id || `${idx}`);
-  if (savedQids.has(qid)) savedQids.delete(qid);
-  else savedQids.add(qid);
+  if (savedQids.has(qid)){
+    savedQids.delete(qid);
+  }else{
+    savedQids.add(qid);
+    playSfx(ASSETS.sfx_save);
+  }
   persistSavedSet();
   updateSavedUI(qid);
 }
 els.qaSave.addEventListener("click", toggleSaveCurrent);
 els.panelSave.addEventListener("click", toggleSaveCurrent);
 
-// UI toggle
+// UI toggle (lightweight)
 els.uiEn.addEventListener("click", ()=>{ setUiLang("en"); render(); });
 els.uiJa.addEventListener("click", ()=>{ setUiLang("ja"); render(); });
 
-// ---------------- boot ----------------
+// =========================================================
+// boot
+// =========================================================
 async function boot(){
   try{
     savedQids = loadSavedSet();
 
-    [setsRows, qRowsAll] = await Promise.all([
+    const [setsRows, questionsRows] = await Promise.all([
       fetchCSV(FILES.sets),
       fetchCSV(FILES.questions),
     ]);
+    allSets = setsRows;
 
-    // optional ui text
+    // optional ui_text
     try{
       const uiRows = await fetchCSV(FILES.ui);
       uiTextMap = buildUiTextMap(uiRows);
@@ -1110,17 +1152,21 @@ async function boot(){
 
     const requested = getParam("set") || getParam("set_id");
     const last = localStorage.getItem(LS.LAST_SET_ID) || "";
+
     const published = setsRows.filter(s => String(s.is_published||"").trim() === "1");
     const firstPublished = published[0]?.set_id || setsRows[0]?.set_id || "";
 
     setId = requested || last || firstPublished || "";
     if (!setId){
-      alert("No set_id found. Please add data/sets.csv");
+      alert("No set_id found. Put sets.csv and questions.csv in /data.");
       location.href = "menu.html";
       return;
     }
 
-    qRows = qRowsAll.filter(q => q.set_id === setId);
+    setMeta = setsRows.find(s => s.set_id === setId) || null;
+
+    // filter questions by set_id
+    qRows = questionsRows.filter(q => q.set_id === setId);
 
     // optional: limit to 10
     if (qRows.length > 10) qRows = qRows.slice(0, 10);
@@ -1131,17 +1177,19 @@ async function boot(){
       return;
     }
 
+    // init
     setUiLang("en");
     idx = 0;
     score = 0;
     wrongIds = [];
 
     render();
+    // optional auto-play first question
     playQuestionAudio();
 
   }catch(e){
     console.error(e);
-    alert("Could not load CSV from GitHub Pages. Put CSV into /data and check filenames.");
+    alert("CSV load failed. Confirm /data/sets.csv and /data/questions.csv exist in GitHub.");
     location.href = "menu.html";
   }
 }
