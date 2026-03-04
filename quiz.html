@@ -226,7 +226,6 @@
     }
     .qa.save{ opacity:.35; }
     .qa.save.on{ opacity:1; }
-    .qa .sub{ font-size:12px; color:var(--muted); }
 
     /* ===== Exit confirm bar ===== */
     .exitBar{
@@ -304,6 +303,16 @@
       margin:10px 0 14px;
     }
 
+    .resultFallback{
+      display:none;
+      margin:10px 0 14px;
+      font-size:40px;
+      font-weight:900;
+      letter-spacing:.04em;
+    }
+    .resultFallback.ok{ color: var(--lime); }
+    .resultFallback.ng{ color: rgba(255,255,255,.85); }
+
     @keyframes popIn {
       0%   { transform: scale(.92); opacity: .0; }
       60%  { transform: scale(1.03); opacity: 1; }
@@ -374,7 +383,6 @@
     #scriptEn{ font-size:14px; line-height:1.5; color:rgba(255,255,255,.85); }
 
     @media (max-width:520px){
-      .exitBtn{ width:78px; }
       .audioBtn{ width:64px; }
       .checkBtn{ width:208px; }
       .promptJa{ font-size:25px; }
@@ -382,13 +390,14 @@
       .cols{ grid-template-columns: 1fr; }
     }
 
-    /* ===== mini-markup styles (JSが出す class と一致) ===== */
+    /* ===== mini-markup styles ===== */
     .mk-hl{ background:rgba(255,255,0,.25); padding:0 .22em; border-radius:.28em; }
     .mk-big{ font-size:1.22em; font-weight:900; }
     .mk-small{ font-size:.86em; opacity:.98; }
     .mk-i{ font-style:italic; }
     .mk-b{ font-weight:900; letter-spacing:.02em; }
     .mk-u{ text-decoration: underline; text-underline-offset: .18em; }
+    .mk-h{ font-size:1.18em; font-weight:900; letter-spacing:.02em; } /* for [h] */
   </style>
 </head>
 
@@ -473,9 +482,8 @@
              alt="Close" />
       </div>
 
-      <img class="resultMsg" id="resultMsg"
-           src="assets/ui/messages/message-result-yatta.png"
-           alt="Result" />
+      <img class="resultMsg" id="resultMsg" src="" alt="Result" />
+      <div class="resultFallback" id="resultFallback">〇</div>
 
       <div class="panelBtns">
         <img class="btnImg continueBtn" id="continueBtn"
@@ -512,32 +520,17 @@
 
 <script>
 /* =========================================================
-   Quiz (GitHub Pages, stable)
-   - CSV: data/sets.csv, data/questions.csv, (optional) data/ui_text.csv
-   - Audio: question audio_file (mp3)
-   - SFX: assets/ui/audio/sfx_applause.mp3 (correct)
-          assets/ui/audio/sfx_bu.mp3       (wrong)
-          assets/ui/audio/sfx_pin.mp3      (save)
-   - Overlay image switches:
-       ok  => assets/ui/messages/message-result-yatta.png
-       ng  => assets/ui/messages/message-result-bu.png
-     (If missing, auto-fallback to message-result-pin.png)
+  Quiz.html (NO upload)
+  - Reads: data/sets.csv, data/questions.csv
+  - Supports: MCQ + input/typing
+  - Correct/Incorrect overlay + SFX
+  - Markup: [b][i][u][h][hl][small][big][ruby][rt]
 ========================================================= */
 
 const FILES = {
   sets: "data/sets.csv",
   questions: "data/questions.csv",
-  ui: "data/ui_text.csv", // optional
-};
-
-const ASSETS = {
-  result_ok: "assets/ui/messages/message-result-yatta.png",
-  result_ng: "assets/ui/messages/message-result-bu.png",
-  result_fallback: "assets/ui/messages/message-result-pin.png",
-
-  sfx_ok: "assets/ui/audio/sfx_applause.mp3",
-  sfx_ng: "assets/ui/audio/sfx_bu.mp3",
-  sfx_save: "assets/ui/audio/sfx_pin.mp3",
+  ui: "data/ui_text.csv" // optional
 };
 
 const LS = {
@@ -548,46 +541,54 @@ const LS = {
   SAVED:       "JPQ_SAVED_QIDS",
 };
 
+const SFX_PATHS = {
+  ok:  "assets/ui/audio/sfx_pin.mp3",
+  ng:  "assets/ui/audio/sfx_bu.mp3",
+  end: "assets/ui/audio/sfx_applause.mp3",
+};
+
+const RESULT_MSG = {
+  // あなたの repo に実在する PNG 名に合わせてね（存在しなくても fallback 文字が出る）
+  ok: "assets/ui/messages/message-result-yatta.png",
+  ng: "assets/ui/messages/message-result-bu.png",
+};
+
 const els = {
-  // top
   exitBtn: document.getElementById("exitBtn"),
   exitBar: document.getElementById("exitBar"),
   exitContinue: document.getElementById("exitContinue"),
   exitQuit: document.getElementById("exitQuit"),
+
   qCount: document.getElementById("qCount"),
   scoreBox: document.getElementById("scoreBox"),
+
   uiEn: document.getElementById("uiEn"),
   uiJa: document.getElementById("uiJa"),
 
-  // instruction
   playBtn: document.getElementById("playBtn"),
   pauseBtn: document.getElementById("pauseBtn"),
   instText: document.getElementById("instText"),
 
-  // prompt
   promptJa: document.getElementById("promptJa"),
   promptEn: document.getElementById("promptEn"),
 
-  // content
   imgGrid: document.getElementById("imgGrid"),
   choices: document.getElementById("choices"),
 
-  // bottom
   checkBtn: document.getElementById("checkBtn"),
   qaScript: document.getElementById("qaScript"),
   qaSave: document.getElementById("qaSave"),
   saveText: document.getElementById("saveText"),
 
-  // overlay
   overlay: document.getElementById("overlay"),
   overlayCloseBtn: document.getElementById("overlayCloseBtn"),
   resultMsg: document.getElementById("resultMsg"),
+  resultFallback: document.getElementById("resultFallback"),
   continueBtn: document.getElementById("continueBtn"),
   panelScript: document.getElementById("panelScript"),
   panelSave: document.getElementById("panelSave"),
   panelSaveText: document.getElementById("panelSaveText"),
 
-  // sheet
   sheet: document.getElementById("sheet"),
   sheetExitBtn: document.getElementById("sheetExitBtn"),
   scriptCols: document.getElementById("scriptCols"),
@@ -595,24 +596,20 @@ const els = {
   scriptEn: document.getElementById("scriptEn"),
 };
 
-// -------- audio objects --------
-const qAudio = new Audio();
-qAudio.preload = "auto";
+const audioQ = new Audio();   // question audio
+audioQ.preload = "auto";
 
-const sfx = new Audio();
-sfx.preload = "auto";
-sfx.volume = 1.0;
+const sfxOk = new Audio(SFX_PATHS.ok);
+const sfxNg = new Audio(SFX_PATHS.ng);
+const sfxEnd = new Audio(SFX_PATHS.end);
+[sfxOk, sfxNg, sfxEnd].forEach(a => { a.preload = "auto"; a.volume = 1.0; });
 
-// -------- app state --------
 let uiLang = "en";
 let uiTextMap = {};
 
 let setId = "";
-let setMeta = null;
-let allSets = [];
 let qRows = [];
 let idx = 0;
-
 let score = 0;
 let wrongIds = [];
 
@@ -621,10 +618,9 @@ let correctIndexNow = 0;
 let typedAnswer = "";
 
 let savedQids = new Set();
+let lastWasOk = false;
 
-// =========================================================
-// CSV helpers
-// =========================================================
+/* ---------------- CSV helpers ---------------- */
 function stripBOM(s){ return (s && s.charCodeAt(0) === 0xFEFF) ? s.slice(1) : s; }
 
 function parseCSV(text){
@@ -691,35 +687,57 @@ function t(key, fallback){
   return (uiTextMap && uiTextMap[key]) ? uiTextMap[key] : fallback;
 }
 
-// =========================================================
-// mini markup
-// =========================================================
+/* ---------------- mini-markup ---------------- */
 function escapeHTML(s){
   return (s||"").replace(/[&<>"']/g, m => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[m]));
 }
+
+/*
+  Supported:
+  [ruby]漢字[rt]かんじ[/rt][/ruby]
+  [b] [/b] , [i], [u], [h], [hl], [small], [big]
+*/
 function miniMarkupToHTML(s){
   s = s || "";
+
+  // ruby first
   s = s.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g,
     (_, a, b)=> `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`);
+
+  // escape then re-inject tags safely by escaping inside replacements
+  // For simple tags, we assume inside can already contain ruby HTML => so we don't double-escape here.
+  // We'll escape raw first, then handle tags on escaped text.
+  // BUT ruby already made HTML, so we protect it:
+  const protectedRuby = [];
+  s = s.replace(/<ruby>[\s\S]*?<\/ruby>/g, m => {
+    protectedRuby.push(m);
+    return `@@RUBY_${protectedRuby.length-1}@@`;
+  });
+
+  s = escapeHTML(s);
 
   s = s.replace(/\[b\]([\s\S]*?)\[\/b\]/g, `<span class="mk-b">$1</span>`);
   s = s.replace(/\[i\]([\s\S]*?)\[\/i\]/g, `<span class="mk-i">$1</span>`);
   s = s.replace(/\[u\]([\s\S]*?)\[\/u\]/g, `<span class="mk-u">$1</span>`);
+  s = s.replace(/\[h\]([\s\S]*?)\[\/h\]/g, `<span class="mk-h">$1</span>`);
   s = s.replace(/\[hl\]([\s\S]*?)\[\/hl\]/g, `<span class="mk-hl">$1</span>`);
   s = s.replace(/\[small\]([\s\S]*?)\[\/small\]/g, `<span class="mk-small">$1</span>`);
   s = s.replace(/\[big\]([\s\S]*?)\[\/big\]/g, `<span class="mk-big">$1</span>`);
+
+  // restore ruby
+  s = s.replace(/@@RUBY_(\d+)@@/g, (_, i) => protectedRuby[Number(i)] || "");
+
   return s;
 }
 
-// =========================================================
-// question type
-// =========================================================
+/* ---------------- question type ---------------- */
 function isInputQuestion(q){
   const raw = String((q.type || q.q_type || "")).trim().toLowerCase();
   return raw === "input" || raw === "typing" || raw === "q_type_input" || raw === "type_input";
 }
+
 function shuffle(arr){
   const a = arr.slice();
   for (let i=a.length-1;i>0;i--){
@@ -729,20 +747,7 @@ function shuffle(arr){
   return a;
 }
 
-// =========================================================
-// typing compare
-// =========================================================
-function extractBracketAnswer(promptJa){
-  const m = String(promptJa||"").match(/\[([^\]]+)\]/);
-  return m ? m[1].trim() : "";
-}
-function getAcceptedAnswers(q){
-  const raw = (q.answer_text || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if (raw.length) return raw;
-  const br = extractBracketAnswer(q.prompt_ja);
-  if (br) return [br];
-  return [];
-}
+/* ---------------- typing compare ---------------- */
 function kataToHira(str){
   return (str||"").replace(/[\u30A1-\u30F6]/g, ch =>
     String.fromCharCode(ch.charCodeAt(0) - 0x60)
@@ -758,6 +763,17 @@ function normalizeRomaji(str){
 function isKanaLike(str){ return /[\u3040-\u30FF]/.test(str||""); }
 function acceptPartial(u, t){ return u && u.length>=2 && (t||"").includes(u); }
 
+function extractBracketAnswer(promptJa){
+  const m = String(promptJa||"").match(/\[([^\]]+)\]/);
+  return m ? m[1].trim() : "";
+}
+function getAcceptedAnswers(q){
+  const raw = (q.answer_text || "").split("|").map(s=>s.trim()).filter(Boolean);
+  if (raw.length) return raw;
+  const br = extractBracketAnswer(q.prompt_ja);
+  if (br) return [br];
+  return [];
+}
 function checkTyped(q, userRaw){
   const acc = getAcceptedAnswers(q);
   if (!acc.length) return false;
@@ -776,9 +792,13 @@ function checkTyped(q, userRaw){
   }
 }
 
-// =========================================================
-// saved set
-// =========================================================
+/* ---------------- URL params ---------------- */
+function getParam(name){
+  const url = new URL(location.href);
+  return url.searchParams.get(name);
+}
+
+/* ---------------- saved ---------------- */
 function loadSavedSet(){
   try{
     const raw = localStorage.getItem(LS.SAVED);
@@ -800,22 +820,19 @@ function updateSavedUI(qid){
   els.panelSaveText.textContent = on ? "Saved" : "Save";
 }
 
-// =========================================================
-// UI helpers
-// =========================================================
-function getParam(name){
-  const url = new URL(location.href);
-  return url.searchParams.get(name);
-}
+/* ---------------- UI lang ---------------- */
 function setUiLang(lang){
   uiLang = lang;
   els.uiEn.classList.toggle("on", uiLang==="en");
   els.uiJa.classList.toggle("on", uiLang==="ja");
+  if (uiLang === "ja"){
+    els.instText.textContent = t("inst_listen_ja", "Listen (kiki mashō)");
+  } else {
+    els.instText.textContent = t("inst_listen_en", "Listen (kiki mashō)");
+  }
 }
 
-// =========================================================
-// render
-// =========================================================
+/* ---------------- images ---------------- */
 function renderImages(q){
   els.imgGrid.innerHTML = "";
   const imgs = (q.image_files || "").split("|").map(s=>s.trim()).filter(Boolean);
@@ -835,10 +852,10 @@ function renderImages(q){
   });
 }
 
+/* ---------------- script sheet ---------------- */
 function renderScript(q){
   const ja = (q.script_ja || "").trim();
   const en = (q.script_en || "").trim();
-
   els.scriptJa.innerHTML = miniMarkupToHTML(ja || "");
   els.scriptEn.innerHTML = miniMarkupToHTML(en || "");
 
@@ -851,16 +868,19 @@ function renderScript(q){
   }
 }
 
-function renderMCQ(q){
+/* ---------------- choices / typing ---------------- */
+function renderChoices(q){
   els.choices.innerHTML = "";
   els.choices.classList.remove("twoCol");
   selectedIndex = null;
+  correctIndexNow = 0;
 
   const rawParts = (q.choices_text || "").split("|").map(v=>v.trim()).filter(Boolean);
   const pairs = rawParts.map((text, origIdx)=>({ text, origIdx }));
 
+  // if listen-only type, no shuffle
   const qt = String((q.type || q.q_type || "")).trim().toLowerCase();
-  const noShuffle = (qt === "q_type_1_listen_only"); // your Type 1
+  const noShuffle = (qt === "q_type_1_listen_only");
   const shown = noShuffle ? pairs : shuffle(pairs);
 
   // answer_index supports 0-based OR 1-based
@@ -869,7 +889,6 @@ function renderMCQ(q){
   if (correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
     correctOrig = correctOrig - 1;
   }
-
   correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
   if (correctIndexNow < 0) correctIndexNow = 0;
 
@@ -928,84 +947,69 @@ function renderTyping(q){
   setTimeout(()=>input.focus(), 60);
 }
 
+/* ---------------- audio ---------------- */
 function setQuestionAudio(src){
-  if (!src){
-    qAudio.removeAttribute("src");
+  if (src){
+    audioQ.src = src;
+    els.playBtn.style.opacity = "1";
+    els.playBtn.style.pointerEvents = "auto";
+  } else {
+    audioQ.removeAttribute("src");
     els.playBtn.style.opacity = ".35";
     els.playBtn.style.pointerEvents = "none";
     els.pauseBtn.style.display = "none";
     els.playBtn.style.display = "";
-    return;
   }
-  qAudio.src = src;
-  els.playBtn.style.opacity = "1";
-  els.playBtn.style.pointerEvents = "auto";
 }
-
-function render(){
-  const q = qRows[idx];
-
-  // pills
-  els.qCount.textContent = `Q: ${idx+1}/${qRows.length}`;
-  els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
-
-  // instruction text (very simple for now)
-  els.instText.textContent = (uiLang==="ja")
-    ? t("inst_listen_ja", "Listen (kiki mashō)")
-    : t("inst_listen_en", "Listen (kiki mashō)");
-
-  // prompt
-  els.promptJa.innerHTML = miniMarkupToHTML(q.prompt_ja || "");
-  els.promptEn.textContent = q.prompt_en || "";
-
-  // images
-  renderImages(q);
-
-  // script
-  renderScript(q);
-
-  // choices / typing
-  if (isInputQuestion(q)) renderTyping(q);
-  else renderMCQ(q);
-
-  // audio
-  setQuestionAudio(q.audio_file || "");
-
-  // saved UI
-  const qid = (q.question_id || `${idx}`);
-  updateSavedUI(qid);
-
-  // close overlays/sheets
-  hideOverlay();
-  hideSheet();
+function playQuestionAudio(){
+  if (!audioQ.src) return;
+  audioQ.currentTime = 0;
+  audioQ.play().then(()=>{
+    els.playBtn.style.display = "none";
+    els.pauseBtn.style.display = "";
+  }).catch(()=>{});
 }
+function pauseQuestionAudio(){
+  audioQ.pause();
+  els.pauseBtn.style.display = "none";
+  els.playBtn.style.display = "";
+}
+audioQ.addEventListener("ended", ()=>{
+  els.pauseBtn.style.display = "none";
+  els.playBtn.style.display = "";
+});
 
-// =========================================================
-// overlay + sfx
-// =========================================================
-function playSfx(src){
-  if (!src) return;
+function playSfx(ok, isLast){
+  const a = isLast && ok ? sfxEnd : (ok ? sfxOk : sfxNg);
   try{
-    sfx.pause();
-    sfx.currentTime = 0;
-    sfx.src = src;
-    sfx.play().catch(()=>{});
-  }catch(_e){}
+    a.currentTime = 0;
+    const p = a.play();
+    if (p && typeof p.catch === "function") p.catch(()=>{});
+  }catch{}
 }
 
-function setResultImage(ok){
-  const target = ok ? ASSETS.result_ok : ASSETS.result_ng;
-  els.resultMsg.onerror = () => { els.resultMsg.src = ASSETS.result_fallback; };
-  els.resultMsg.src = target;
-}
-
+/* ---------------- overlay / sheet ---------------- */
 function showOverlay(ok){
-  setResultImage(ok);
+  lastWasOk = ok;
+
+  // set image (and fallback to text if png missing)
+  const src = ok ? RESULT_MSG.ok : RESULT_MSG.ng;
+  els.resultMsg.style.display = "";
+  els.resultMsg.src = src;
+  els.resultFallback.style.display = "none";
+
+  els.resultFallback.textContent = ok ? "〇" : "×";
+  els.resultFallback.classList.toggle("ok", ok);
+  els.resultFallback.classList.toggle("ng", !ok);
+
+  // if image fails, show fallback
+  els.resultMsg.onerror = () => {
+    els.resultMsg.style.display = "none";
+    els.resultFallback.style.display = "block";
+  };
+
   els.overlay.classList.add("show");
   els.overlay.setAttribute("aria-hidden", "false");
-
-  // SFX
-  playSfx(ok ? ASSETS.sfx_ok : ASSETS.sfx_ng);
 }
 function hideOverlay(){
   els.overlay.classList.remove("show");
@@ -1021,30 +1025,31 @@ function hideSheet(){
   els.sheet.setAttribute("aria-hidden", "true");
 }
 
-// =========================================================
-// question audio controls
-// =========================================================
-function playQuestionAudio(){
-  if (!qAudio.src) return;
-  qAudio.currentTime = 0;
-  qAudio.play().then(()=>{
-    els.playBtn.style.display = "none";
-    els.pauseBtn.style.display = "";
-  }).catch(()=>{});
-}
-function pauseQuestionAudio(){
-  qAudio.pause();
-  els.pauseBtn.style.display = "none";
-  els.playBtn.style.display = "";
-}
-qAudio.addEventListener("ended", ()=>{
-  els.pauseBtn.style.display = "none";
-  els.playBtn.style.display = "";
-});
+/* ---------------- render question ---------------- */
+function render(){
+  const q = qRows[idx];
 
-// =========================================================
-// flow
-// =========================================================
+  els.qCount.textContent = `Q: ${idx+1}/${qRows.length}`;
+  els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
+
+  els.promptJa.innerHTML = miniMarkupToHTML(q.prompt_ja || "");
+  els.promptEn.textContent = q.prompt_en || "";
+
+  setQuestionAudio(q.audio_file || "");
+  renderImages(q);
+  renderScript(q);
+
+  if (isInputQuestion(q)) renderTyping(q);
+  else renderChoices(q);
+
+  const qid = (q.question_id || `${idx}`);
+  updateSavedUI(qid);
+
+  hideOverlay();
+  hideSheet();
+}
+
+/* ---------------- flow ---------------- */
 function finish(){
   localStorage.setItem(LS.LAST_SET_ID, setId);
   localStorage.setItem(LS.LAST_TOTAL, String(qRows.length));
@@ -1053,6 +1058,7 @@ function finish(){
   localStorage.setItem(LS.WRONG_IDS, JSON.stringify(wrongIds));
   location.href = "result.html";
 }
+
 function next(){
   idx += 1;
   if (idx >= qRows.length){
@@ -1060,20 +1066,17 @@ function next(){
     return;
   }
   render();
-  // optional auto-play
   playQuestionAudio();
 }
 
-// =========================================================
-// events
-// =========================================================
+/* ---------------- events ---------------- */
 els.playBtn.addEventListener("click", playQuestionAudio);
 els.pauseBtn.addEventListener("click", pauseQuestionAudio);
 
 els.checkBtn.addEventListener("click", ()=>{
   const q = qRows[idx];
-  let ok = false;
 
+  let ok = false;
   if (isInputQuestion(q)){
     ok = checkTyped(q, typedAnswer);
   } else {
@@ -1086,10 +1089,14 @@ els.checkBtn.addEventListener("click", ()=>{
     wrongIds.push(q.question_id || String(idx));
   }
 
-  // update pill immediately
+  // update pill now
   els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
 
-  // show overlay (this is where ○/× + SFX happen)
+  // SFX (click event = safe)
+  const isLast = (idx === qRows.length - 1);
+  playSfx(ok, isLast);
+
+  // overlay (THIS is where 〇/× is decided)
   showOverlay(ok);
 });
 
@@ -1099,40 +1106,43 @@ els.continueBtn.addEventListener("click", ()=>{
 });
 els.overlayCloseBtn.addEventListener("click", hideOverlay);
 
-// Exit confirm
+/* Exit confirm */
 els.exitBtn.addEventListener("click", ()=> els.exitBar.classList.add("show"));
 els.exitContinue.addEventListener("click", ()=> els.exitBar.classList.remove("show"));
 els.exitQuit.addEventListener("click", ()=> location.href = "menu.html");
 
-// Script sheet
+/* Script sheet */
 els.qaScript.addEventListener("click", showSheet);
 els.panelScript.addEventListener("click", ()=>{ hideOverlay(); showSheet(); });
 els.sheetExitBtn.addEventListener("click", hideSheet);
 
-// Save toggle
+/* Save toggle */
 function toggleSaveCurrent(){
   const q = qRows[idx];
   const qid = (q.question_id || `${idx}`);
-  if (savedQids.has(qid)){
-    savedQids.delete(qid);
-  }else{
-    savedQids.add(qid);
-    playSfx(ASSETS.sfx_save);
-  }
+  if (savedQids.has(qid)) savedQids.delete(qid);
+  else savedQids.add(qid);
   persistSavedSet();
   updateSavedUI(qid);
 }
 els.qaSave.addEventListener("click", toggleSaveCurrent);
 els.panelSave.addEventListener("click", toggleSaveCurrent);
 
-// UI toggle (lightweight)
+/* UI toggle */
 els.uiEn.addEventListener("click", ()=>{ setUiLang("en"); render(); });
 els.uiJa.addEventListener("click", ()=>{ setUiLang("ja"); render(); });
 
-// =========================================================
-// boot
-// =========================================================
-async function boot(){
+/* keyboard */
+document.addEventListener("keydown", (e)=>{
+  if (e.key === "Escape"){
+    hideOverlay();
+    hideSheet();
+    els.exitBar.classList.remove("show");
+  }
+});
+
+/* ---------------- boot ---------------- */
+(async function boot(){
   try{
     savedQids = loadSavedSet();
 
@@ -1140,17 +1150,15 @@ async function boot(){
       fetchCSV(FILES.sets),
       fetchCSV(FILES.questions),
     ]);
-    allSets = setsRows;
 
-    // optional ui_text
     try{
-      const uiRows = await fetchCSV(FILES.ui);
-      uiTextMap = buildUiTextMap(uiRows);
+      uiTextMap = buildUiTextMap(await fetchCSV(FILES.ui));
     }catch{
       uiTextMap = {};
     }
 
-    const requested = getParam("set") || getParam("set_id");
+    // accept both ?set_id=... and ?set=...
+    const requested = getParam("set_id") || getParam("set") || getParam("setId");
     const last = localStorage.getItem(LS.LAST_SET_ID) || "";
 
     const published = setsRows.filter(s => String(s.is_published||"").trim() === "1");
@@ -1158,18 +1166,16 @@ async function boot(){
 
     setId = requested || last || firstPublished || "";
     if (!setId){
-      alert("No set_id found. Put sets.csv and questions.csv in /data.");
+      alert("No set_id found. Please add data/sets.csv");
       location.href = "menu.html";
       return;
     }
 
-    setMeta = setsRows.find(s => s.set_id === setId) || null;
-
-    // filter questions by set_id
-    qRows = questionsRows.filter(q => q.set_id === setId);
-
-    // optional: limit to 10
-    if (qRows.length > 10) qRows = qRows.slice(0, 10);
+    qRows = questionsRows.filter(q => String(q.set_id||"") === String(setId));
+    if (!qRows.length){
+      // fallback: if param is actually question_set_id
+      qRows = questionsRows.filter(q => String(q.question_set_id||"") === String(setId));
+    }
 
     if (!qRows.length){
       alert(`No questions found for set_id: ${setId}`);
@@ -1177,23 +1183,20 @@ async function boot(){
       return;
     }
 
-    // init
     setUiLang("en");
+
     idx = 0;
     score = 0;
     wrongIds = [];
 
     render();
-    // optional auto-play first question
     playQuestionAudio();
-
   }catch(e){
     console.error(e);
-    alert("CSV load failed. Confirm /data/sets.csv and /data/questions.csv exist in GitHub.");
+    alert("Could not load CSV from GitHub Pages. Check data/sets.csv and data/questions.csv");
     location.href = "menu.html";
   }
-}
-boot();
+})();
 </script>
 </body>
 </html>
