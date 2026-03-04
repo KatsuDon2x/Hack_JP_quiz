@@ -4,282 +4,867 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Menu</title>
+
   <style>
     :root{
-      --bg:#000; --fg:#fff;
+      --bg:#000;
+      --fg:#fff;
       --muted:rgba(255,255,255,.68);
-      --muted2:rgba(255,255,255,.5);
-      --card:rgba(255,255,255,.08);
+      --muted2:rgba(255,255,255,.50);
       --stroke:rgba(255,255,255,.14);
       --lime:#B7FF2A;
       --pad:18px;
       --radius:16px;
     }
-    html,body{height:100%;}
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
-    a{color:inherit;text-decoration:none}
-    .screen{min-height:100%;display:flex;flex-direction:column}
-    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;gap:12px;}
-    .brand{font-weight:650;letter-spacing:.2px}
-    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--stroke);background:rgba(255,255,255,.06);padding:8px 12px;border-radius:999px;color:var(--muted);font-size:12px}
-    .content{flex:1;padding:0 16px 18px 16px;max-width:980px;margin:0 auto;width:100%}
-    .h1{margin:10px 0 6px 0;text-align:center;letter-spacing:.8px}
-    .sub{margin:0 0 18px 0;text-align:center;color:var(--muted);font-size:13px}
-    .sectionTitle{margin:18px 0 10px 0;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1.4px}
-    .levels{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    }
+
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding:var(--pad);
+      padding-bottom:120px; /* space for fixed footer */
+      box-sizing:border-box;
+    }
+
+    .sectionGap{ height:10px; }
+
+    /* --- top bar --- */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      position:relative;
+      z-index:2;
+    }
+
+    .btnImg{
+      display:block;
+      height:auto;
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+    .exitBtn{ width:40px; }
+    .hamburgerBtn{ width:40px; opacity:.85; }
+
+    /* --- exit confirm bar (top snackbar) --- */
+    .exitBar{
+      position:fixed;
+      left:50%;
+      top:12px;
+      transform:translate(-50%, -22px);
+      width:min(980px, calc(100% - 24px));
+      display:flex;
+      justify-content:center;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:50;
+    }
+    .exitBar.show{
+      opacity:1;
+      transform:translate(-50%, 0);
+      pointer-events:auto;
+    }
+    .exitBarInner{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:999px;
+      padding:10px 12px;
+      box-shadow:0 10px 30px rgba(0,0,0,.55);
+      backdrop-filter: blur(8px);
+    }
+    .exitBtnImg{
+      width:210px;
+      max-width:42vw;
+      height:auto;
+    }
+
+    /* --- message image (smaller: your preferred newer size) --- */
+    .msg{
+      width:min(300px, 50vw);
+      height:auto;
+      display:block;
+      margin:6px auto 16px;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
+    /* --- instruction text --- */
+    .instruction{
+      margin:6px 0 10px;
+      line-height:1.22;
+    }
+    .instruction .big{
+      font-size:22px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .instruction .small{
+      display:block;
+      margin-top:4px;
+      font-size:14px;
+      color:var(--muted);
+      letter-spacing:.2px;
+    }
+    ruby rt{ font-size:.55em; opacity:.9; }
+
+    /* --- levels: horizontal compact scroll --- */
+    .levels{
+      display:flex;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      padding-bottom:6px;
+      -webkit-overflow-scrolling:touch;
+      gap:6px;
+      margin:8px 0 10px;
+      align-items:stretch;
+    }
+    .levels::-webkit-scrollbar{ height:8px; }
+    .levels::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.16); border-radius:999px; }
+
     .levelCard{
-      width:96px; height:74px;
+      width:104px;
+      min-width:86px;
+      flex:0 0 auto;
+      display:flex;
+      flex-direction:column;
       border-radius:14px;
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.05);
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      cursor:pointer; user-select:none;
-      transition:transform .08s ease, border-color .15s ease, background .15s ease;
-    }
-    .levelCard:hover{transform:translateY(-1px)}
-    .levelCard.active{
-      border-color:rgba(183,255,42,.55);
-      box-shadow:0 0 0 2px rgba(183,255,42,.12) inset, 0 0 14px rgba(183,255,42,.18);
-      background:rgba(183,255,42,.10);
-    }
-    .levelInner{font-weight:700;font-size:14px;line-height:1.05;text-align:center}
-    .levelLabel{margin-top:6px;font-size:11px;color:var(--muted2)}
-    .topics{margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
-    .topicCard{
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.05);
-      border-radius:16px;
-      padding:14px 14px 12px 14px;
-      display:flex;flex-direction:column;gap:8px;
-    }
-    .topicTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-    .topicName{font-weight:700}
-    .topicMeta{color:var(--muted);font-size:12px}
-    .topicBtns{display:flex;gap:10px;margin-top:6px}
-    .btn{
-      flex:1;
-      border-radius:14px;
-      padding:12px 14px;
       border:1px solid var(--stroke);
       background:rgba(255,255,255,.06);
-      color:var(--fg);
-      font-weight:650;
+      padding:6px;
+      box-sizing:border-box;
       cursor:pointer;
+      user-select:none;
+      transition:transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+      opacity:.85;
     }
-    .btnPrimary{
-      border-color:rgba(183,255,42,.55);
-      background:rgba(183,255,42,.12);
-      box-shadow:0 0 14px rgba(183,255,42,.18);
+    .levelCard:hover{ transform:translateY(-1px); }
+    .levelCard.active{
+      border-color:rgba(183,255,42,.65);
+      background:rgba(183,255,42,.18);
+      box-shadow:0 0 0 2px rgba(183,255,42,.14) inset;
+      opacity:1;
     }
-    .btn:active{transform:translateY(1px)}
-    .nav{
-      position:sticky;bottom:0;
-      display:flex;justify-content:space-around;gap:10px;
-      padding:10px 14px;
+
+    .levelInner{
+      width:100%;
+      box-sizing:border-box;
+      height:40px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(0,0,0,.25);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      font-weight:950;
+      letter-spacing:.4px;
+      line-height:1.05;
+      font-size:16px;
+    }
+
+    .levelCard.active .levelInner{
+      border-color:rgba(0,0,0,.20);
+      color:#000;
+      background:linear-gradient(180deg, rgba(183,255,42,.95), rgba(183,255,42,.70));
+    }
+
+    .levelLabel{
+      width:100%;
+      text-align:center;
+      margin-top:4px;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:750;
+    }
+    .levelCard.active .levelLabel{ color:#fff; }
+
+    /* --- topics scroll area --- */
+    .topicsPane{
+      border-top:1px solid rgba(255,255,255,.12);
+      margin-top:8px;
+      padding-top:10px;
+
+      /* more room because levels are horizontal now */
+      max-height: calc(100vh - 300px);
+      overflow:auto;
+
+      padding-right:4px;
+    }
+    .topicsPane::-webkit-scrollbar{ width:8px; }
+    .topicsPane::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.16); border-radius:999px; }
+
+    details.topic{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      border-radius:14px;
+      margin:8px 0;
+      overflow:hidden;
+    }
+
+    summary.topicHead{
+      list-style:none;
+      cursor:pointer;
+      padding:10px 12px; /* compact but finger-friendly */
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background:rgba(255,255,255,.04);
+    }
+    summary.topicHead::-webkit-details-marker{ display:none; }
+
+    .topicTitle{
+      font-size:15px;
+      color:rgba(255,255,255,.92);
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .topicTitle .en{
+      display:block;
+      font-weight:700;
+      color:var(--muted);
+      font-size:13px;
+      margin-top:2px;
+      letter-spacing:.1px;
+    }
+
+    .chev{
+      color:var(--muted);
+      font-weight:900;
+      font-size:16px;
+      opacity:.85;
+      transform: rotate(0deg);
+      transition:transform .12s ease;
+    }
+    details[open] .chev{ transform: rotate(90deg); }
+
+    .quizList{
+      padding:6px 10px 10px;
       border-top:1px solid rgba(255,255,255,.10);
-      background:rgba(0,0,0,.75);
+    }
+
+    .quizRow{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 10px;   /* compact but tappable */
+      margin:6px 0;
+      border-radius:12px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.14);
+    }
+
+    .quizTitle{
+      cursor:pointer;
+      font-size:16px;
+      font-weight:900;
+      line-height:1.25;
+    }
+    .quizSub{
+      display:block;
+      margin-top:3px;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:650;
+      letter-spacing:.1px;
+    }
+
+    .mini{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:16px;
+      color:var(--muted);
+      user-select:none;
+      padding-top:2px;
+    }
+    .mini span{ cursor:pointer; }
+    .mini .saved{ opacity:.35; }
+    .mini .saved.on{ opacity:1; color:#fff; }
+
+    /* 2-column quiz list on desktop only */
+    @media (min-width: 760px){
+      .quizList{
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap:10px;
+      }
+      .quizRow{ margin:0; }
+    }
+
+    /* --- bottom nav --- */
+    .footerNav{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      padding:10px 14px;
+      background:rgba(0,0,0,.7);
+      backdrop-filter: blur(8px);
+      display:flex;
+      justify-content:center;
+      z-index:10;
+    }
+    .footerNavInner{
+      width:min(980px, 100%);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .footerNavInner img{ width:74px; opacity:.85; }
+    .footerNavInner img.dim{ opacity:.6; }
+
+    /* --- side drawer --- */
+    .drawerOverlay{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .18s ease;
+      z-index:40;
+    }
+    .drawerOverlay.show{ opacity:1; pointer-events:auto; }
+
+    .drawer{
+      position:fixed;
+      top:0; left:0;
+      height:100%;
+      width:min(320px, 86vw);
+      background:rgba(12,12,12,.97);
+      border-right:1px solid rgba(255,255,255,.12);
+      transform:translateX(-102%);
+      transition:transform .22s ease;
+      z-index:45;
+      padding:18px 16px;
+      box-sizing:border-box;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
       backdrop-filter: blur(10px);
     }
-    .nav .navBtn{
-      width:110px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      padding:10px 12px;
+    .drawer.show{ transform:translateX(0); }
+
+    .drawer h3{
+      margin:4px 0 0;
+      font-size:16px;
+      color:rgba(255,255,255,.9);
+      letter-spacing:.2px;
+    }
+
+    .drawer a, .drawer button{
+      text-align:left;
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
       background:rgba(255,255,255,.06);
+      color:#fff;
+      padding:12px 12px;
+      font-weight:850;
+      font-size:14px;
+      cursor:pointer;
+    }
+    .drawer a{ text-decoration:none; display:block; }
+
+    .drawer .muted{
       color:var(--muted);
       font-size:12px;
-      cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      gap:8px;
+      line-height:1.3;
+      margin-top:-6px;
     }
-    .nav .navBtn.primary{color:#000;background:rgba(183,255,42,.92);border-color:rgba(183,255,42,.65);font-weight:750}
+    .drawer .spacer{ flex:1; }
+    .drawer .closeBtn{
+      border-color:rgba(183,255,42,.35);
+      background:rgba(183,255,42,.15);
+    }
+
+/* ===== Active (expanded) topic glow ===== */
+details[open] > summary.topicHead{
+  background: linear-gradient(
+    180deg,
+    rgba(183,255,42,.95),
+    rgba(183,255,42,.75)
+  );
+  color:#000;
+  border-bottom:1px solid rgba(0,0,0,.25);
+
+  /* glow */
+  box-shadow:
+    0 0 0 1px rgba(183,255,42,.55) inset,
+    0 0 18px rgba(183,255,42,.65),
+    0 8px 28px rgba(183,255,42,.35);
+}
+
+/* text inside active topic */
+details[open] .topicTitle{
+  color:#000;
+}
+details[open] .topicTitle .en{
+  color:rgba(0,0,0,.65);
+}
+
+/* chevron when open */
+details[open] .chev{
+  color:#000;
+  opacity:1;
+}
+
+@keyframes softGlow {
+  0%   { box-shadow: 0 0 14px rgba(183,255,42,.45); }
+  50%  { box-shadow: 0 0 26px rgba(183,255,42,.75); }
+  100% { box-shadow: 0 0 14px rgba(183,255,42,.45); }
+}
+
+details[open] > summary.topicHead{
+  animation: softGlow 2.6s ease-in-out infinite;
+}
+
+
   </style>
 </head>
+
 <body>
-  <div class="screen">
-    <div class="topbar">
-      <div class="brand">Hack_JP_quiz</div>
-      <div class="pill" id="sitePill">GitHub Pages mode</div>
-    </div>
-
-    <div class="content">
-      <h2 class="h1">CHOOSE A QUIZ</h2>
-      <p class="sub">Pick a level → choose a set → start.</p>
-
-      <div class="sectionTitle">Level</div>
-      <div class="levels" id="levels"></div>
-
-      <div class="sectionTitle">Sets</div>
-      <div class="topics" id="topics"></div>
-    </div>
-
-    <div class="nav">
-      <button class="navBtn primary" id="navHome">Home</button>
-      <button class="navBtn" id="navReview">Review</button>
-      <button class="navBtn" id="navSaved">Saved</button>
+  <!-- exit confirm bar -->
+  <div class="exitBar" id="exitBar">
+    <div class="exitBarInner">
+      <img class="btnImg exitBtnImg" id="exitContinue"
+           src="assets/ui/buttons/button-exit_confirmation-continue.png"
+           alt="Continue" />
+      <img class="btnImg exitBtnImg" id="exitQuit"
+           src="assets/ui/buttons/button-exit_confirmation-quit.png"
+           alt="Quit" />
     </div>
   </div>
 
-<script>
-/* =========================================================
-   Menu (GitHub-friendly)
-   - Loads sets.csv from repo (no upload.html, no local upload)
-========================================================= */
+  <!-- side drawer -->
+  <div id="drawerOverlay" class="drawerOverlay" aria-hidden="true"></div>
+  <aside id="drawer" class="drawer" aria-label="Menu drawer">
+    <h3>Menu</h3>
+    <a href="upload.html">Upload CSV</a>
+    <button id="goReview" type="button">Review (wrong)</button>
+    <button id="goSavedQuiz" type="button">Saved questions</button>
+    <button id="goSavedTopics" type="button">Saved topics (later)</button>
+    <div class="muted">
+      * Review / Saved work after quiz.html stores the lists in localStorage.
+    </div>
+    <div class="spacer"></div>
+    <button id="drawerClose" class="closeBtn" type="button">Close</button>
+  </aside>
 
-function parseCSV(text){
-  const rows=[]; let row=[]; let cur=""; let inQ=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i], n=text[i+1];
-    if(c === '"'){
-      if(inQ && n === '"'){ cur+='"'; i++; }
-      else inQ=!inQ;
-    } else if(c === ',' && !inQ){
-      row.push(cur); cur="";
-    } else if((c==='\n' || c==='\r') && !inQ){
-      if(c==='\r' && n==='\n') i++;
+  <div class="wrap">
+    <div class="topbar">
+      <img class="btnImg exitBtn" id="exitBtn"
+           src="assets/ui/buttons/button-exit.png" alt="Exit" />
+      <img class="btnImg hamburgerBtn" id="hamburgerBtn"
+           src="assets/ui/buttons/button-hamburger_menu-before.png" alt="Menu" />
+    </div>
+
+    <!-- choose a quiz message -->
+    <img class="msg"
+         src="assets/ui/messages/message-choose_a_quiz.png"
+         alt="Choose a quiz" />
+
+    <!-- instruction: level -->
+    <div class="instruction">
+      <div class="big">レベルを <ruby>選<rt>えら</rt></ruby>びましょう。</div>
+      <span class="small">Reberu wo erabi mashō<br/>Pick one or more levels</span>
+    </div>
+
+    <!-- level filters -->
+    <div class="levels" id="levels"></div>
+
+    <div class="sectionGap"></div>
+
+    <!-- instruction: topic -->
+    <div class="instruction">
+      <div class="big">トピックを <ruby>選<rt>えら</rt></ruby>びましょう。</div>
+      <span class="small">Topikku wo erabi mashō<br/>Pick a topic</span>
+    </div>
+
+    <!-- topics -->
+    <div class="topicsPane" id="topics"></div>
+  </div><!-- /wrap -->
+
+  <!-- bottom nav -->
+  <div class="footerNav">
+    <div class="footerNavInner">
+      <img class="btnImg" id="navHome"
+           src="assets/ui/buttons/button-navigation-home.png" alt="Home" />
+      <img class="btnImg dim" id="navReview"
+           src="assets/ui/buttons/button-navigation-review.png" alt="Review" />
+      <img class="btnImg dim" id="navSaved"
+           src="assets/ui/buttons/button-navigation-saved.png" alt="Saved" />
+    </div>
+  </div>
+
+  <script>
+    /* ===== CSV parsing ===== */
+    function parseCSV(text){
+      const rows = [];
+      let row=[], cur="", inQ=false;
+      for(let i=0;i<text.length;i++){
+        const c=text[i], n=text[i+1];
+        if(c === '"'){
+          if(inQ && n === '"'){ cur+='"'; i++; }
+          else inQ=!inQ;
+        } else if(c === ',' && !inQ){
+          row.push(cur); cur="";
+        } else if((c==='\n' || c==='\r') && !inQ){
+          if(c==='\r' && n==='\n') i++;
+          row.push(cur);
+          if(row.some(v=>v.trim()!=="")) rows.push(row);
+          row=[]; cur="";
+        } else cur+=c;
+      }
       row.push(cur);
       if(row.some(v=>v.trim()!=="")) rows.push(row);
-      row=[]; cur="";
-    } else cur+=c;
-  }
-  row.push(cur);
-  if(row.some(v=>v.trim()!=="")) rows.push(row);
 
-  const header = rows.shift().map(h=>h.trim());
-  return rows.map(r=>{
-    const o={};
-    header.forEach((h,idx)=>o[h]=(r[idx]??"").trim());
-    return o;
-  });
-}
-
-const LEVELS = [
-  { id:"A1",  jlpt:"N5", label:"Beginner" },
-  { id:"A2",  jlpt:"N4", label:"Elementary" },
-  { id:"B1",  jlpt:"N3", label:"Intermediate" },
-  { id:"B2",  jlpt:"N2", label:"Upper" },
-  { id:"C1/2",jlpt:"N1", label:"Advanced" },
-];
-
-let allSets = [];
-let selectedLevels = new Set(["A1"]);
-
-function renderLevels(){
-  const el = document.getElementById("levels");
-  el.innerHTML = "";
-  for(const lv of LEVELS){
-    const card = document.createElement("div");
-    const isOn = selectedLevels.has(lv.id);
-    card.className = "levelCard" + (isOn ? " active" : "");
-    const inner = document.createElement("div");
-    inner.className = "levelInner";
-    inner.innerHTML = `${lv.id}<br>${lv.jlpt}`;
-    const label = document.createElement("div");
-    label.className = "levelLabel";
-    label.textContent = lv.label;
-    card.appendChild(inner);
-    card.appendChild(label);
-    card.addEventListener("click", ()=>{
-      if(selectedLevels.has(lv.id)) selectedLevels.delete(lv.id);
-      else selectedLevels.add(lv.id);
-      renderLevels();
-      renderTopics();
-    });
-    el.appendChild(card);
-  }
-}
-
-function groupBy(arr, key){
-  const m = new Map();
-  for(const x of arr){
-    const k = (x[key] || "").trim();
-    if(!m.has(k)) m.set(k, []);
-    m.get(k).push(x);
-  }
-  return m;
-}
-
-function renderTopics(){
-  const wrap = document.getElementById("topics");
-  wrap.innerHTML = "";
-
-  const filtered = allSets.filter(s => selectedLevels.has((s.level_cefr||"").trim()));
-  if(filtered.length === 0){
-    wrap.innerHTML = `<div class="topicCard">
-      <div class="topicName">No sets for this level yet</div>
-      <div class="topicMeta">Add rows in sets.csv (level_cefr) and questions.csv (set_id).</div>
-    </div>`;
-    return;
-  }
-
-  const byTopic = groupBy(filtered, "topic_title_en");
-  for(const [topic, sets] of byTopic.entries()){
-    for(const s of sets){
-      const card = document.createElement("div");
-      card.className = "topicCard";
-
-      const top = document.createElement("div");
-      top.className = "topicTop";
-      const name = document.createElement("div");
-      name.className = "topicName";
-      name.textContent = (s.set_title_en || s.quiz_title_en || s.set_id || "Untitled");
-
-      const meta = document.createElement("div");
-      meta.className = "topicMeta";
-      meta.textContent = `${(s.level_cefr||"")} ${(s.level_jlpt||"")} • ${s.set_id}`;
-
-      top.appendChild(name);
-      top.appendChild(meta);
-
-      const btns = document.createElement("div");
-      btns.className = "topicBtns";
-      const start = document.createElement("button");
-      start.className = "btn btnPrimary";
-      start.textContent = "Start";
-      start.addEventListener("click", ()=>{
-        location.href = `quiz.html?set=${encodeURIComponent(s.set_id)}`;
+      const header = rows.shift().map(h=>h.trim());
+      return rows.map(r=>{
+        const o={};
+        header.forEach((h,idx)=>o[h]=(r[idx]??"").trim());
+        return o;
       });
-
-      const open = document.createElement("button");
-      open.className = "btn";
-      open.textContent = "Open";
-      open.addEventListener("click", ()=>{
-        location.href = `quiz.html?set=${encodeURIComponent(s.set_id)}`;
-      });
-
-      btns.appendChild(start);
-      btns.appendChild(open);
-
-      card.appendChild(top);
-      card.appendChild(btns);
-      wrap.appendChild(card);
     }
-  }
-}
 
-async function boot(){
-  try{
-    const res = await fetch("sets.csv", {cache:"no-store"});
-    if(!res.ok) throw new Error("Could not fetch sets.csv");
-    const csv = await res.text();
-    const rows = parseCSV(csv);
+    /* ===== Ruby markup helpers ===== */
+    function normalizeRubyMarkup(s){
+      if(!s) return "";
+      return String(s)
+        .replace(/\[br\]/gi, "<br>")
+        .replace(/\[ruby\]/gi, "<ruby>")
+        .replace(/\[\/ruby\]/gi, "</ruby>")
+        .replace(/\[rt\]/gi, "<rt>")
+        .replace(/\[\/rt\]/gi, "</rt>")
+        .replace(/\[rb\]/gi, "<rb>")
+        .replace(/\[\/rb\]/gi, "</rb>");
+    }
 
-    // only published
-    allSets = rows.filter(r => String(r.is_published||"").trim() === "1");
+    /* ===== Data source (upload first, fallback to fetch) ===== */
+    const LS_SETS = "JPQ_SETS_CSV";
+    async function getSetsCSV(){
+      const uploaded = localStorage.getItem(LS_SETS);
+      if(uploaded) return uploaded;
 
-    renderLevels();
-    renderTopics();
-  }catch(err){
-    console.error(err);
-    alert("Menu cannot load sets.csv.\n\nMake sure sets.csv is in the SAME folder as menu.html in the repo.");
-  }
-}
+      const res = await fetch("data/sets.csv");
+      if(!res.ok) throw new Error("Cannot load data/sets.csv. Use upload.html on file://");
+      return await res.text();
+    }
 
-document.getElementById("navHome").addEventListener("click", ()=> location.href="splash.html");
-document.getElementById("navReview").addEventListener("click", ()=> alert("Review later (we will wire it)."));
-document.getElementById("navSaved").addEventListener("click", ()=> alert("Saved later (we will wire it)."));
+    /* ===== Saved quiz sets (bookmark icon in menu) ===== */
+    const LS_SAVED_SETS = "JPQ_SAVED_SETS";
+    function getSavedSetMap(){
+      try{ return JSON.parse(localStorage.getItem(LS_SAVED_SETS)||"{}"); }
+      catch(e){ return {}; }
+    }
+    function setSavedSet(setId, on){
+      const m = getSavedSetMap();
+      if(on) m[setId]=true; else delete m[setId];
+      localStorage.setItem(LS_SAVED_SETS, JSON.stringify(m));
+    }
 
-boot();
-</script>
+    /* ===== Progress (use keys written by quiz.html you have) ===== */
+    function getSetProgress(setId){
+      // Your quiz.html writes:
+      // - JPQ_WRONG_COUNT_<setId>
+      // - JPQ_TRIED_<setId>
+      const wrongCount = Math.max(0, Number(localStorage.getItem(`JPQ_WRONG_COUNT_${setId}`) || 0));
+      const tried = localStorage.getItem(`JPQ_TRIED_${setId}`) === "1";
+      return { hasTried: tried, hasUnclearedWrong: wrongCount > 0 };
+    }
+
+    /* ===== Level filter UI ===== */
+    const LEVELS = [
+      { id:"A1",  jlpt:"N5", label:"Beginner" },
+      { id:"A2",  jlpt:"N4", label:"Elementary" },
+      { id:"B1",  jlpt:"N3", label:"Intermediate" },
+      { id:"B2",  jlpt:"N2", label:"Upper" },
+      { id:"C1/2",jlpt:"N1", label:"Advanced" },
+    ];
+
+    let allSets = [];
+    let selectedLevels = new Set(["A1"]); // default
+
+    function renderLevels(){
+      const el = document.getElementById("levels");
+      el.innerHTML = "";
+
+      for(const lv of LEVELS){
+        const card = document.createElement("div");
+        const isOn = selectedLevels.has(lv.id);
+        card.className = "levelCard" + (isOn ? " active" : "");
+        card.setAttribute("role","button");
+        card.setAttribute("aria-pressed", isOn ? "true" : "false");
+
+        const inner = document.createElement("div");
+        inner.className = "levelInner";
+        inner.innerHTML = `${lv.id}<br>${lv.jlpt}`;
+
+        const label = document.createElement("div");
+        label.className = "levelLabel";
+        label.textContent = lv.label;
+
+        card.appendChild(inner);
+        card.appendChild(label);
+
+        card.addEventListener("click", ()=>{
+          if(selectedLevels.has(lv.id)) selectedLevels.delete(lv.id);
+          else selectedLevels.add(lv.id);
+
+          renderLevels();
+          renderTopics();
+          syncNavBadges();
+        });
+
+        el.appendChild(card);
+      }
+    }
+
+    function groupBy(arr, key){
+      const m = new Map();
+      for(const x of arr){
+        const k = (x[key] || "").trim();
+        if(!m.has(k)) m.set(k, []);
+        m.get(k).push(x);
+      }
+      return m;
+    }
+
+    /* ===== Topics list ===== */
+    function renderTopics(){
+      const wrap = document.getElementById("topics");
+      wrap.innerHTML = "";
+
+      const saved = getSavedSetMap();
+
+      const visible = allSets
+        .filter(s => (s.is_published ?? "1") !== "0")
+        .filter(s => selectedLevels.size===0 ? true : selectedLevels.has((s.level_cefr||"").trim()))
+        .sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0));
+
+      if(visible.length === 0){
+        const empty = document.createElement("div");
+        empty.style.color = "rgba(255,255,255,.6)";
+        empty.style.fontSize = "14px";
+        empty.style.padding = "12px 4px";
+        empty.textContent = "No quizzes for selected level(s).";
+        wrap.appendChild(empty);
+        return;
+      }
+
+      const byTopic = groupBy(visible, "topic_id");
+
+      for(const [topicId, items] of byTopic){
+        const det = document.createElement("details");
+        det.className = "topic";
+
+        const sum = document.createElement("summary");
+        sum.className = "topicHead";
+
+        const ttl = document.createElement("div");
+        ttl.className = "topicTitle";
+
+        const ja = normalizeRubyMarkup((items[0].topic_title_ja || items[0].topic_title_en || "").trim());
+        const enRaw = (items[0].topic_title_en || "").trim();
+        const en = normalizeRubyMarkup(enRaw);
+        ttl.innerHTML = `${ja || ""}${en ? `<span class="en">${en}</span>` : ""}`;
+
+        const chev = document.createElement("div");
+        chev.className = "chev";
+        chev.textContent = "›";
+
+        sum.appendChild(ttl);
+        sum.appendChild(chev);
+
+        const list = document.createElement("div");
+        list.className = "quizList";
+
+        for(const s of items){
+          const row = document.createElement("div");
+          row.className = "quizRow";
+
+          const left = document.createElement("div");
+          left.className = "quizTitle";
+
+          const jaTitle = normalizeRubyMarkup((s.quiz_title_ja || "").trim());
+          const enTitleRaw = (s.quiz_title_en || "").trim();
+          const enTitle = normalizeRubyMarkup(enTitleRaw);
+          left.innerHTML = `${jaTitle || enTitle || "(untitled)"}${enTitle ? `<span class="quizSub">${enTitle}</span>` : ""}`;
+
+          left.addEventListener("click", ()=>{
+            location.href = `quiz.html?set_id=${encodeURIComponent(s.set_id)}`;
+          });
+
+          const right = document.createElement("div");
+          right.className = "mini";
+
+          const prog = getSetProgress(s.set_id);
+
+          const script = document.createElement("span");
+          script.textContent = "🔎";
+          script.style.opacity = prog.hasUnclearedWrong ? "1" : (prog.hasTried ? ".55" : ".25");
+          script.title = prog.hasUnclearedWrong
+            ? "In progress — some answers still need a second try."
+            : (prog.hasTried ? "Tried already." : "Not tried yet.");
+
+          const save = document.createElement("span");
+          save.textContent = "🔖";
+          save.className = "saved" + (saved[s.set_id] ? " on" : "");
+          save.title = "Save this quiz";
+          save.addEventListener("click",(e)=>{
+            e.stopPropagation();
+            const m = getSavedSetMap();
+            setSavedSet(s.set_id, !m[s.set_id]);
+            renderTopics();
+            syncNavBadges();
+          });
+
+          right.appendChild(script);
+          right.appendChild(save);
+
+          row.appendChild(left);
+          row.appendChild(right);
+          list.appendChild(row);
+        }
+
+        det.appendChild(sum);
+        det.appendChild(list);
+        wrap.appendChild(det);
+      }
+    }
+
+    /* ===== Exit confirm bar ===== */
+    const exitBar = document.getElementById("exitBar");
+    let exitTimer = null;
+
+    function showExitBar(){
+      exitBar.classList.add("show");
+      clearTimeout(exitTimer);
+      exitTimer = setTimeout(()=> exitBar.classList.remove("show"), 5000);
+    }
+    function hideExitBar(){
+      exitBar.classList.remove("show");
+      clearTimeout(exitTimer);
+    }
+
+    document.getElementById("exitBtn").addEventListener("click", showExitBar);
+    document.getElementById("exitContinue").addEventListener("click", hideExitBar);
+    document.getElementById("exitQuit").addEventListener("click", ()=> location.href="upload.html");
+
+    /* ===== Drawer ===== */
+    const drawer = document.getElementById("drawer");
+    const overlay = document.getElementById("drawerOverlay");
+
+    function openDrawer(){
+      drawer.classList.add("show");
+      overlay.classList.add("show");
+    }
+    function closeDrawer(){
+      drawer.classList.remove("show");
+      overlay.classList.remove("show");
+    }
+
+    document.getElementById("hamburgerBtn").addEventListener("click", openDrawer);
+    document.getElementById("drawerClose").addEventListener("click", closeDrawer);
+    overlay.addEventListener("click", closeDrawer);
+
+    /* ===== Bottom nav + global review/saved ===== */
+    document.getElementById("navHome").addEventListener("click", ()=> location.href="upload.html");
+
+    // quiz.html writes these:
+    const LS_WRONG_IDS_BY_SET = "JPQ_WRONG_IDS_BY_SET";      // { [setId]: [qId,...] }
+    const LS_SAVED_QIDS_BY_SET = "JPQ_SAVED_QIDS_BY_SET";   // { [setId]: [qId,...] }
+
+    function firstKeyWithNonEmptyList(raw){
+      try{
+        const obj = JSON.parse(raw||"{}");
+        if(!obj || typeof obj!=="object") return "";
+        for(const k of Object.keys(obj)){
+          const a = obj[k];
+          if(Array.isArray(a) && a.length>0) return k;
+        }
+        return "";
+      }catch(e){ return ""; }
+    }
+
+    function hasAnyWrong(){
+      return !!firstKeyWithNonEmptyList(localStorage.getItem(LS_WRONG_IDS_BY_SET));
+    }
+    function hasAnySavedQ(){
+      return !!firstKeyWithNonEmptyList(localStorage.getItem(LS_SAVED_QIDS_BY_SET));
+    }
+
+    function syncNavBadges(){
+      const navReview = document.getElementById("navReview");
+      const navSaved  = document.getElementById("navSaved");
+
+      const anyWrong = hasAnyWrong();
+      const anySaved = hasAnySavedQ();
+
+      if(navReview){
+        navReview.classList.toggle("dim", !anyWrong);
+        navReview.style.pointerEvents = anyWrong ? "auto" : "none";
+        navReview.title = anyWrong ? "Review wrong questions" : "No wrong questions yet";
+      }
+      if(navSaved){
+        navSaved.classList.toggle("dim", !anySaved);
+        navSaved.style.pointerEvents = anySaved ? "auto" : "none";
+        navSaved.title = anySaved ? "Saved questions" : "No saved questions yet";
+      }
+    }
+
+    function startGlobalReview(){
+      const sid = firstKeyWithNonEmptyList(localStorage.getItem(LS_WRONG_IDS_BY_SET));
+      if(!sid){ alert("No wrong questions saved yet."); return; }
+      location.href = `quiz.html?set_id=${encodeURIComponent(sid)}&mode=review`;
+    }
+
+    function startGlobalSaved(){
+      const sid = firstKeyWithNonEmptyList(localStorage.getItem(LS_SAVED_QIDS_BY_SET));
+      if(!sid){ alert("No saved questions yet."); return; }
+      location.href = `quiz.html?set_id=${encodeURIComponent(sid)}&mode=saved`;
+    }
+
+    document.getElementById("navReview").addEventListener("click", startGlobalReview);
+    document.getElementById("navSaved").addEventListener("click", startGlobalSaved);
+
+    document.getElementById("goReview").addEventListener("click", ()=>{ closeDrawer(); startGlobalReview(); });
+    document.getElementById("goSavedQuiz").addEventListener("click", ()=>{ closeDrawer(); startGlobalSaved(); });
+    document.getElementById("goSavedTopics").addEventListener("click", ()=>{
+      closeDrawer();
+      alert("Saved topics screen can be added later (separate HTML or inside menu).");
+    });
+
+    /* ===== Init ===== */
+    (async function init(){
+      renderLevels();
+
+      try{
+        const csv = await getSetsCSV();
+        allSets = parseCSV(csv);
+        renderTopics();
+        syncNavBadges();
+      }catch(err){
+        alert("Menu cannot load sets.csv.\n\nOpen upload.html first and upload CSV files.\n\n" + err);
+        console.error(err);
+        location.href = "upload.html";
+      }
+
+      window.addEventListener("focus", syncNavBadges);
+    })();
+  </script>
 </body>
 </html>
