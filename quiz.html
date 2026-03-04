@@ -511,13 +511,17 @@
 
 <script>
 /* =========================================================
-   Quiz (GitHub Pages)
+   quiz.html (single-file, GitHub Pages)
+   - Loads: data/sets.csv, data/questions.csv (ui_text optional)
+   - MCQ + typing input
+   - Audio play/pause
+   - Result overlay: image swap + SFX
 ========================================================= */
 
 const FILES = {
   sets: "data/sets.csv",
   questions: "data/questions.csv",
-  ui: "data/ui_text.csv",
+  ui: "data/ui_text.csv", // optional
 };
 
 const LS = {
@@ -528,7 +532,16 @@ const LS = {
   SAVED:       "JPQ_SAVED_QIDS",
 };
 
+// ===== YOU MAY NEED TO CHANGE THESE FILENAMES =====
+const RESULT_IMG_OK = "assets/ui/messages/message-result-correct.png";
+const RESULT_IMG_NG = "assets/ui/messages/message-result-wrong.png";
+
+const SFX_OK = "assets/ui/sfx/correct.mp3";
+const SFX_NG = "assets/ui/sfx/wrong.mp3";
+
+// ===== DOM =====
 const els = {
+  // top
   exitBtn: document.getElementById("exitBtn"),
   exitBar: document.getElementById("exitBar"),
   exitContinue: document.getElementById("exitContinue"),
@@ -540,28 +553,35 @@ const els = {
   uiEn: document.getElementById("uiEn"),
   uiJa: document.getElementById("uiJa"),
 
+  // instruction
   playBtn: document.getElementById("playBtn"),
   pauseBtn: document.getElementById("pauseBtn"),
   instText: document.getElementById("instText"),
 
+  // prompt
   promptJa: document.getElementById("promptJa"),
   promptEn: document.getElementById("promptEn"),
 
+  // content
   imgGrid: document.getElementById("imgGrid"),
   choices: document.getElementById("choices"),
 
+  // bottom
   checkBtn: document.getElementById("checkBtn"),
   qaScript: document.getElementById("qaScript"),
   qaSave: document.getElementById("qaSave"),
   saveText: document.getElementById("saveText"),
 
+  // overlay
   overlay: document.getElementById("overlay"),
   overlayCloseBtn: document.getElementById("overlayCloseBtn"),
+  resultMsg: document.getElementById("resultMsg"),
   continueBtn: document.getElementById("continueBtn"),
   panelScript: document.getElementById("panelScript"),
   panelSave: document.getElementById("panelSave"),
   panelSaveText: document.getElementById("panelSaveText"),
 
+  // sheet
   sheet: document.getElementById("sheet"),
   sheetExitBtn: document.getElementById("sheetExitBtn"),
   scriptCols: document.getElementById("scriptCols"),
@@ -569,18 +589,26 @@ const els = {
   scriptEn: document.getElementById("scriptEn"),
 };
 
-const audio = new Audio();
-audio.preload = "auto";
+// ===== Audio =====
+const qAudio = new Audio();
+qAudio.preload = "auto";
 
-let uiLang = "en";
+const sfx = new Audio();
+sfx.preload = "auto";
+
+// ===== State =====
+let uiLang = "en"; // "en" | "ja"
 let uiTextMap = {};
 
 let setId = "";
+let setsRows = [];
+let qRowsAll = [];
 let qRows = [];
 let idx = 0;
 
 let score = 0;
 let wrongIds = [];
+
 let selectedIndex = null;
 let correctIndexNow = 0;
 let typedAnswer = "";
@@ -593,40 +621,40 @@ function stripBOM(s){ return (s && s.charCodeAt(0) === 0xFEFF) ? s.slice(1) : s;
 function parseCSV(text){
   text = stripBOM(text || "");
   const rows = [];
-  let row = [], cur = "", inQ = false;
+  let row = [];
+  let cur = "";
+  let inQ = false;
 
-  for(let i=0;i<text.length;i++){
+  for (let i=0;i<text.length;i++){
     const ch = text[i];
-    if(inQ){
-      if(ch === '"'){
+    if (inQ){
+      if (ch === '"'){
         const next = text[i+1];
-        if(next === '"'){ cur += '"'; i++; }
-        else inQ = false;
-      }else cur += ch;
+        if (next === '"'){ cur += '"'; i++; }
+        else { inQ = false; }
+      } else cur += ch;
       continue;
     }
-    if(ch === '"'){ inQ = true; continue; }
-    if(ch === ","){ row.push(cur); cur=""; continue; }
-    if(ch === "\n"){
+    if (ch === '"'){ inQ = true; continue; }
+    if (ch === ","){ row.push(cur); cur=""; continue; }
+    if (ch === "\n"){
       row.push(cur); cur="";
-      if(row.some(c => (c||"").trim() !== "")) rows.push(row);
-      row = [];
-      continue;
+      if (row.some(c => (c||"").trim() !== "")) rows.push(row);
+      row=[]; continue;
     }
-    if(ch === "\r") continue;
+    if (ch === "\r") continue;
     cur += ch;
   }
-  if(cur.length || row.length){
+  if (cur.length || row.length){
     row.push(cur);
-    if(row.some(c => (c||"").trim() !== "")) rows.push(row);
+    if (row.some(c => (c||"").trim() !== "")) rows.push(row);
   }
-  if(!rows.length) return [];
-
+  if (!rows.length) return [];
   const header = rows[0].map(h => (h||"").trim());
   const out = [];
-  for(let r=1;r<rows.length;r++){
+  for (let r=1;r<rows.length;r++){
     const obj = {};
-    for(let c=0;c<header.length;c++){
+    for (let c=0;c<header.length;c++){
       obj[header[c]] = (rows[r][c] ?? "").trim();
     }
     out.push(obj);
@@ -636,20 +664,19 @@ function parseCSV(text){
 
 async function fetchCSV(path){
   const res = await fetch(path, { cache:"no-store" });
-  if(!res.ok) throw new Error(`Failed to fetch ${path} (${res.status})`);
+  if (!res.ok) throw new Error(`Failed to fetch ${path} (${res.status})`);
   return parseCSV(await res.text());
 }
 
 function buildUiTextMap(rows){
   const map = {};
-  for(const r of rows){
+  for (const r of rows){
     const k = (r.key || r.id || "").trim();
-    if(!k) continue;
+    if (!k) continue;
     map[k] = (r.value || r.text || "").trim();
   }
   return map;
 }
-
 function t(key, fallback){
   return (uiTextMap && uiTextMap[key]) ? uiTextMap[key] : fallback;
 }
@@ -660,12 +687,10 @@ function escapeHTML(s){
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[m]));
 }
-
 function miniMarkupToHTML(s){
   s = s || "";
   s = s.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g,
-    (_, a, b)=> `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`
-  );
+    (_, a, b)=> `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`);
   s = s.replace(/\[b\]([\s\S]*?)\[\/b\]/g, `<span class="mk-b">$1</span>`);
   s = s.replace(/\[i\]([\s\S]*?)\[\/i\]/g, `<span class="mk-i">$1</span>`);
   s = s.replace(/\[u\]([\s\S]*?)\[\/u\]/g, `<span class="mk-u">$1</span>`);
@@ -680,21 +705,18 @@ function isInputQuestion(q){
   const raw = String((q.type || q.q_type || "")).trim().toLowerCase();
   return raw === "input" || raw === "typing" || raw === "q_type_input" || raw === "type_input";
 }
-
 function shuffle(arr){
   const a = arr.slice();
-  for(let i=a.length-1;i>0;i--){
+  for (let i=a.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
     [a[i],a[j]] = [a[j],a[i]];
   }
   return a;
 }
 
-// typing comparison
+// ---------------- typing compare ----------------
 function kataToHira(str){
-  return (str||"").replace(/[\u30A1-\u30F6]/g, ch =>
-    String.fromCharCode(ch.charCodeAt(0) - 0x60)
-  );
+  return (str||"").replace(/[\u30A1-\u30F6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
 }
 function normalizeKana(str){ return kataToHira((str||"").trim()); }
 function normalizeRomaji(str){
@@ -712,39 +734,33 @@ function extractBracketAnswer(promptJa){
 }
 function getAcceptedAnswers(q){
   const raw = (q.answer_text || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if(raw.length) return raw;
+  if (raw.length) return raw;
   const br = extractBracketAnswer(q.prompt_ja);
-  if(br) return [br];
+  if (br) return [br];
   return [];
 }
 function checkTyped(q, userRaw){
   const acc = getAcceptedAnswers(q);
-  if(!acc.length) return false;
-
+  if (!acc.length) return false;
   const uRaw = (userRaw||"").trim();
-  if(!uRaw) return false;
+  if (!uRaw) return false;
 
-  if(isKanaLike(uRaw)){
+  if (isKanaLike(uRaw)){
     const u = normalizeKana(uRaw);
     const targets = acc.map(a => normalizeKana(a));
     return targets.some(tg => u === tg || acceptPartial(u, tg));
-  }else{
+  } else {
     const u = normalizeRomaji(uRaw);
     const targets = acc.map(a => normalizeRomaji(a));
     return targets.some(tg => u === tg || acceptPartial(u, tg));
   }
 }
 
-// ---------------- misc helpers ----------------
-function getParam(name){
-  const url = new URL(location.href);
-  return url.searchParams.get(name);
-}
-
+// ---------------- saved ----------------
 function loadSavedSet(){
   try{
     const raw = localStorage.getItem(LS.SAVED);
-    if(!raw) return new Set();
+    if (!raw) return new Set();
     const arr = JSON.parse(raw);
     return new Set(Array.isArray(arr) ? arr : []);
   }catch{
@@ -755,17 +771,103 @@ function persistSavedSet(){
   localStorage.setItem(LS.SAVED, JSON.stringify([...savedQids]));
 }
 
+// ---------------- UI language ----------------
 function setUiLang(lang){
   uiLang = lang;
   els.uiEn.classList.toggle("on", uiLang==="en");
   els.uiJa.classList.toggle("on", uiLang==="ja");
+
+  // instruction text (you can later map to ui_text.csv if you want)
+  els.instText.textContent = (uiLang==="ja")
+    ? t("inst_listen_ja", "Listen (kiki mashō)")
+    : t("inst_listen_en", "Listen (kiki mashō)");
 }
 
-// ---------------- render ----------------
+// ---------------- audio ----------------
+function setQuestionAudio(src){
+  if (!src){
+    qAudio.removeAttribute("src");
+    els.playBtn.style.opacity = ".35";
+    els.playBtn.style.pointerEvents = "none";
+    els.pauseBtn.style.display = "none";
+    els.playBtn.style.display = "";
+    return;
+  }
+  qAudio.src = src;
+  els.playBtn.style.opacity = "1";
+  els.playBtn.style.pointerEvents = "auto";
+}
+
+function playQuestionAudio(){
+  if (!qAudio.src) return;
+  qAudio.currentTime = 0;
+  qAudio.play().then(()=>{
+    els.playBtn.style.display = "none";
+    els.pauseBtn.style.display = "";
+  }).catch(()=>{});
+}
+function pauseQuestionAudio(){
+  qAudio.pause();
+  els.pauseBtn.style.display = "none";
+  els.playBtn.style.display = "";
+}
+qAudio.addEventListener("ended", ()=>{
+  els.pauseBtn.style.display = "none";
+  els.playBtn.style.display = "";
+});
+
+// SFX
+function playSfx(ok){
+  const src = ok ? SFX_OK : SFX_NG;
+  sfx.src = src;
+  sfx.currentTime = 0;
+  sfx.play().catch(() => {
+    // fallback beep
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = ok ? 880 : 220;
+      g.gain.value = 0.06;
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      setTimeout(()=>{ o.stop(); ctx.close(); }, 120);
+    }catch{}
+  });
+}
+
+// ---------------- overlay / sheet ----------------
+function showOverlay(ok){
+  // image swap
+  if (els.resultMsg){
+    els.resultMsg.src = ok ? RESULT_IMG_OK : RESULT_IMG_NG;
+    els.resultMsg.alt = ok ? "Correct" : "Wrong";
+  }
+  // sfx
+  playSfx(ok);
+
+  els.overlay.classList.add("show");
+  els.overlay.setAttribute("aria-hidden", "false");
+}
+function hideOverlay(){
+  els.overlay.classList.remove("show");
+  els.overlay.setAttribute("aria-hidden", "true");
+}
+function showSheet(){
+  els.sheet.classList.add("show");
+  els.sheet.setAttribute("aria-hidden", "false");
+}
+function hideSheet(){
+  els.sheet.classList.remove("show");
+  els.sheet.setAttribute("aria-hidden", "true");
+}
+
+// ---------------- render helpers ----------------
 function renderImages(q){
   els.imgGrid.innerHTML = "";
   const imgs = (q.image_files || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if(!imgs.length){
+  if (!imgs.length){
     els.imgGrid.style.display = "none";
     return;
   }
@@ -787,10 +889,10 @@ function renderScript(q){
   els.scriptJa.innerHTML = miniMarkupToHTML(ja || "");
   els.scriptEn.innerHTML = miniMarkupToHTML(en || "");
 
-  if(ja && !en){
+  if (ja && !en){
     els.scriptCols.style.gridTemplateColumns = "1fr";
     els.scriptEn.style.display = "none";
-  }else{
+  } else {
     els.scriptCols.style.gridTemplateColumns = "";
     els.scriptEn.style.display = "";
   }
@@ -810,12 +912,12 @@ function renderChoices(q){
   const shown = noShuffle ? pairs : shuffle(pairs);
 
   let correctOrig = parseInt(q.answer_index || "0", 10);
-  if(!Number.isFinite(correctOrig)) correctOrig = 0;
-  if(correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
+  if (!Number.isFinite(correctOrig)) correctOrig = 0;
+  if (correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
     correctOrig = correctOrig - 1;
   }
   correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
-  if(correctIndexNow < 0) correctIndexNow = 0;
+  if (correctIndexNow < 0) correctIndexNow = 0;
 
   const long = shown.some(p => (p.text || "").length > 22);
   els.choices.classList.toggle("twoCol", !long);
@@ -859,7 +961,7 @@ function renderTyping(q){
 
   input.addEventListener("input", ()=> typedAnswer = input.value);
   input.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter"){
+    if (e.key === "Enter"){
       e.preventDefault();
       els.checkBtn.click();
     }
@@ -880,23 +982,6 @@ function updateSavedUI(qid){
   els.panelSaveText.textContent = on ? "Saved" : "Save";
 }
 
-function hideOverlay(){
-  els.overlay.classList.remove("show");
-  els.overlay.setAttribute("aria-hidden", "true");
-}
-function showOverlay(){
-  els.overlay.classList.add("show");
-  els.overlay.setAttribute("aria-hidden", "false");
-}
-function hideSheet(){
-  els.sheet.classList.remove("show");
-  els.sheet.setAttribute("aria-hidden", "true");
-}
-function showSheet(){
-  els.sheet.classList.add("show");
-  els.sheet.setAttribute("aria-hidden", "false");
-}
-
 function render(){
   const q = qRows[idx];
 
@@ -906,61 +991,28 @@ function render(){
   els.promptJa.innerHTML = miniMarkupToHTML(q.prompt_ja || "");
   els.promptEn.textContent = q.prompt_en || "";
 
-  // instruction label
-  if(uiLang === "ja"){
-    els.instText.textContent = t("inst_listen_ja", "Listen (kiki mashō)");
-  }else{
-    els.instText.textContent = t("inst_listen_en", "Listen (kiki mashō)");
-  }
-
-  // audio
-  if(q.audio_file){
-    audio.src = q.audio_file;
-    els.playBtn.style.opacity = "1";
-    els.playBtn.style.pointerEvents = "auto";
-  }else{
-    audio.removeAttribute("src");
-    els.playBtn.style.opacity = ".35";
-    els.playBtn.style.pointerEvents = "none";
-    els.pauseBtn.style.display = "none";
-    els.playBtn.style.display = "";
-  }
-
   renderImages(q);
   renderScript(q);
 
-  if(isInputQuestion(q)) renderTyping(q);
+  setQuestionAudio(q.audio_file || "");
+
+  if (isInputQuestion(q)) renderTyping(q);
   else renderChoices(q);
 
   const qid = (q.question_id || `${idx}`);
   updateSavedUI(qid);
 
   hideOverlay();
+  // sheetは閉じない（好みで）：ここでは閉じる
   hideSheet();
 }
 
-// ---------------- audio controls ----------------
-function playAudio(){
-  if(!audio.src) return;
-  audio.currentTime = 0;
-  audio.play().then(()=>{
-    els.playBtn.style.display = "none";
-    els.pauseBtn.style.display = "";
-  }).catch((e)=>{
-    console.log("audio play failed:", e);
-  });
-}
-function pauseAudio(){
-  audio.pause();
-  els.pauseBtn.style.display = "none";
-  els.playBtn.style.display = "";
-}
-audio.addEventListener("ended", ()=>{
-  els.pauseBtn.style.display = "none";
-  els.playBtn.style.display = "";
-});
-
 // ---------------- flow ----------------
+function getParam(name){
+  const url = new URL(location.href);
+  return url.searchParams.get(name);
+}
+
 function finish(){
   localStorage.setItem(LS.LAST_SET_ID, setId);
   localStorage.setItem(LS.LAST_TOTAL, String(qRows.length));
@@ -970,37 +1022,45 @@ function finish(){
   location.href = "result.html";
 }
 
-function next(){
+function nextQuestion(){
   idx += 1;
-  if(idx >= qRows.length) return finish();
+  if (idx >= qRows.length){
+    finish();
+    return;
+  }
   render();
-  playAudio();
+  playQuestionAudio();
 }
 
 // ---------------- events ----------------
-els.playBtn.addEventListener("click", playAudio);
-els.pauseBtn.addEventListener("click", pauseAudio);
+els.playBtn.addEventListener("click", playQuestionAudio);
+els.pauseBtn.addEventListener("click", pauseQuestionAudio);
 
 els.checkBtn.addEventListener("click", ()=>{
   const q = qRows[idx];
   let ok = false;
 
-  if(isInputQuestion(q)){
+  if (isInputQuestion(q)){
     ok = checkTyped(q, typedAnswer);
-  }else{
+  } else {
     ok = (selectedIndex !== null) && (selectedIndex === correctIndexNow);
   }
 
-  if(ok) score += 1;
-  else wrongIds.push(q.question_id || String(idx));
+  if (ok){
+    score += 1;
+  } else {
+    wrongIds.push(q.question_id || String(idx));
+  }
 
   els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
-  showOverlay(); // overlay always shows; you can change image based on ok later
+
+  // ✅ correct/wrong image + sfx
+  showOverlay(ok);
 });
 
 els.continueBtn.addEventListener("click", ()=>{
   hideOverlay();
-  next();
+  nextQuestion();
 });
 els.overlayCloseBtn.addEventListener("click", hideOverlay);
 
@@ -1018,7 +1078,7 @@ els.sheetExitBtn.addEventListener("click", hideSheet);
 function toggleSaveCurrent(){
   const q = qRows[idx];
   const qid = (q.question_id || `${idx}`);
-  if(savedQids.has(qid)) savedQids.delete(qid);
+  if (savedQids.has(qid)) savedQids.delete(qid);
   else savedQids.add(qid);
   persistSavedSet();
   updateSavedUI(qid);
@@ -1035,11 +1095,12 @@ async function boot(){
   try{
     savedQids = loadSavedSet();
 
-    const [setsRows, questionsRows] = await Promise.all([
+    [setsRows, qRowsAll] = await Promise.all([
       fetchCSV(FILES.sets),
       fetchCSV(FILES.questions),
     ]);
 
+    // optional ui text
     try{
       const uiRows = await fetchCSV(FILES.ui);
       uiTextMap = buildUiTextMap(uiRows);
@@ -1053,16 +1114,18 @@ async function boot(){
     const firstPublished = published[0]?.set_id || setsRows[0]?.set_id || "";
 
     setId = requested || last || firstPublished || "";
-    if(!setId){
+    if (!setId){
       alert("No set_id found. Please add data/sets.csv");
       location.href = "menu.html";
       return;
     }
 
-    qRows = questionsRows.filter(q => q.set_id === setId);
-    if(qRows.length > 10) qRows = qRows.slice(0, 10);
+    qRows = qRowsAll.filter(q => q.set_id === setId);
 
-    if(!qRows.length){
+    // optional: limit to 10
+    if (qRows.length > 10) qRows = qRows.slice(0, 10);
+
+    if (!qRows.length){
       alert(`No questions found for set_id: ${setId}`);
       location.href = "menu.html";
       return;
@@ -1074,16 +1137,15 @@ async function boot(){
     wrongIds = [];
 
     render();
-    playAudio();
+    playQuestionAudio();
+
   }catch(e){
     console.error(e);
     alert("Could not load CSV from GitHub Pages. Put CSV into /data and check filenames.");
     location.href = "menu.html";
   }
 }
-
 boot();
 </script>
-
 </body>
 </html>
