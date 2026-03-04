@@ -1,1202 +1,450 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Quiz</title>
+  <title>Dictation Quiz</title>
+
   <style>
     :root{
       --bg:#000;
       --fg:#fff;
-      --muted:rgba(255,255,255,.65);
+      --muted:rgba(255,255,255,.68);
+      --card:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.14);
       --lime:#C8FF2E;
-
-      --panel-bg: #162c40;
-      --panel-border: rgba(255,255,255,.18);
-      --darkbar: rgba(45,45,45,.92);
+      --red:#ff4d4d;
+      --green:#22c55e;
+      --radius:16px;
+      --pad:18px;
     }
-
+    *{ box-sizing:border-box; }
     html,body{ height:100%; }
     body{
       margin:0;
       background:var(--bg);
       color:var(--fg);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", sans-serif;
     }
+    .wrap{ min-height:100%; display:flex; flex-direction:column; }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; border-bottom:1px solid var(--stroke);
+      background:rgba(0,0,0,.55); position:sticky; top:0;
+      backdrop-filter: blur(10px); z-index:5;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:999px;
+      background:var(--card); border:1px solid var(--stroke);
+      font-size:14px; color:var(--muted);
+    }
+    .pill strong{ color:var(--fg); font-weight:700; }
 
-    .wrap{
-      max-width:980px;
-      margin:0 auto;
-      padding:16px;
-      padding-bottom:160px;
-    }
-
-    /* ===== top area ===== */
-    .top{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-top:4px;
-      flex-wrap:wrap;
-    }
-    .leftTop{ display:flex; align-items:center; gap:10px; }
-    .btnImg{
-      display:block;
-      height:auto;
-      cursor:pointer;
-      user-select:none;
-      -webkit-user-drag:none;
-    }
-    .exitBtn{ width:50px; }
-
-    .statusRow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .statusPill{
-      background:#fff;
-      color:#000;
-      border-radius:14px;
-      padding:8px 12px;
-      font-size:14px;
-      font-weight:900;
-      min-width:110px;
-      text-align:center;
-    }
-
-    .uiToggle{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      background:var(--lime);
-      border-radius:14px;
-      padding:6px;
-    }
-    .uiPill{
-      padding:8px 10px;
-      border-radius:12px;
-      font-size:13px;
-      font-weight:900;
-      color:#000;
-      opacity:.45;
-      cursor:pointer;
-      user-select:none;
-      white-space:nowrap;
-    }
-    .uiPill.on{ opacity:1; background:rgba(0,0,0,.12); }
-
-    /* ===== instruction ===== */
-    .inst{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin:14px 0 10px;
-    }
-    .audioBtn{ width:72px; }
-    .instText{
-      font-size:16px;
+    .btn{
+      border:1px solid var(--stroke);
+      background:var(--card);
       color:var(--fg);
-      line-height:1.4;
-    }
-
-    /* ===== prompt sizes ===== */
-    .promptBox{ margin:10px 0 12px; }
-
-    .promptJa{
-      font-size:27px;
-      line-height:1.45;
-      margin:0 0 6px;
-      font-weight:450;
-    }
-    .promptJa ruby{ ruby-position: over; }
-    .promptJa rt{
-      font-size:0.80em;
-      opacity:0.92;
-      letter-spacing:0.02em;
-    }
-    .promptEn{
-      font-size:14px;
-      line-height:1.5;
-      margin:0;
-      color:rgba(255,255,255,.82);
-    }
-
-    /* ===== images ===== */
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:12px;
-      margin:10px 0 14px;
-    }
-    .imgCard{
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.04);
-      overflow:hidden;
-    }
-    .imgCard img{
-      width:100%;
-      height:auto;
-      display:block;
-    }
-
-    /* ===== choices ===== */
-    .choices{ margin-top:6px; display:grid; gap:10px; }
-    .choices.twoCol{ grid-template-columns: 1fr 1fr; }
-
-    .choiceBtn{
-      text-align:left;
-      padding:12px 14px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.06);
-      color:var(--fg);
-      cursor:pointer;
-      font-weight:600;
-      font-size:16px;
-      line-height:1.35;
-      transition: background .12s ease, border-color .12s ease, color .12s ease;
-    }
-    .choiceBtn.active{
-      background:var(--lime);
-      border-color:rgba(0,0,0,.25);
-      color:#000;
-      font-weight:900;
-    }
-
-    /* ===== typing input ===== */
-    .typeWrap{
-      display:grid;
-      gap:10px;
-      margin-top:6px;
-    }
-    .typeInput{
-      width:100%;
-      box-sizing:border-box;
-      padding:14px 14px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.06);
-      color:#fff;
-      font-size:16px;
-      outline:none;
-    }
-    .typeHint{
-      font-size:12px;
-      color:rgba(255,255,255,.62);
-    }
-
-    /* ===== bottom bar ===== */
-    .bottomBar{
-      position:fixed;
-      left:0; right:0; bottom:16px;
-      display:flex;
-      justify-content:center;
-      z-index:40;
-      pointer-events:none;
-    }
-    .bottomInner{
-      width:min(980px, calc(100% - 28px));
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:12px;
-      pointer-events:none;
-    }
-
-    .checkBtn{ width:216px; pointer-events:auto; }
-
-    .rightActions{
-      display:flex;
-      gap:10px;
-      align-items:flex-end;
-      pointer-events:auto;
-    }
-    .qa{
-      display:flex;
-      align-items:center;
-      gap:8px;
       padding:10px 12px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(0,0,0,.55);
+      border-radius:12px;
       cursor:pointer;
       user-select:none;
-      font-size:15px;
-      color:var(--fg);
-      white-space:nowrap;
     }
-    .qa.save{ opacity:.35; }
-    .qa.save.on{ opacity:1; }
+    .btn:hover{ border-color: rgba(200,255,46,.55); }
+    .btn-primary{
+      border-color: rgba(200,255,46,.55);
+      box-shadow: 0 0 0 2px rgba(200,255,46,.12) inset;
+    }
+    .btn-primary:hover{
+      box-shadow: 0 0 0 2px rgba(200,255,46,.20) inset, 0 0 18px rgba(200,255,46,.16);
+    }
+    .btn-danger:hover{ border-color: rgba(255,77,77,.55); }
 
-    /* ===== Exit confirm bar ===== */
-    .exitBar{
-      position:fixed;
-      left:0; right:0;
-      top:0;
-      z-index:80;
-      display:flex;
-      justify-content:center;
-      pointer-events:none;
-      transform: translateY(-120%);
-      transition: transform .18s ease;
-    }
-    .exitBar.show{ transform: translateY(0); }
-
-    .exitBarInner{
-      width:min(980px, calc(100% - 28px));
-      background:var(--darkbar);
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:18px;
-      margin-top:10px;
-      padding:12px;
-      display:flex;
-      flex-direction:row;
-      justify-content: space-between;
-      align-items:center;
-      gap:14px;
-      flex-wrap:wrap;
-      pointer-events:auto;
-    }
-    .exitBtnImg{
-      width:min(140px, 30vw);
-      max-width:260px;
-    }
-
-    /* ===== Result overlay ===== */
-    .overlay{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:flex-start;
-      justify-content:center;
-      padding-top:36px;
-      z-index:60;
-      background:rgba(0,0,0,.35);
-    }
-    .overlay.show{ display:flex; }
-
-    .panel{
-      width:min(980px, calc(100% - 28px));
-      border-radius:18px;
-      border:1px solid var(--panel-border);
-      background:var(--panel-bg);
-      padding:16px;
+    .main{ flex:1; padding: var(--pad); display:flex; justify-content:center; }
+    .card{
+      width:min(760px, 100%);
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-radius: 22px;
+      padding: 18px;
       box-shadow: 0 18px 60px rgba(0,0,0,.55);
-      transform: translateY(-16px);
-      opacity: 0;
-      transition: transform .18s ease, opacity .18s ease;
-    }
-    .overlay.show .panel{
-      transform: translateY(0);
-      opacity: 1;
     }
 
-    .panelTop{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
+    .progress{
+      height:10px; background:rgba(255,255,255,.08);
+      border:1px solid var(--stroke); border-radius:999px;
+      overflow:hidden; margin:10px 0 14px;
+    }
+    .progress > div{
+      height:100%; width:0%;
+      background: linear-gradient(90deg, var(--lime), rgba(200,255,46,.45));
+      transition: width .35s ease;
     }
 
-    .resultMsg{
-      width:min(520px, 82vw);
-      height:auto;
-      display:block;
-      margin:10px 0 14px;
+    .q-title{ font-size:14px; color:var(--muted); margin:0 0 6px; }
+    .q-text{ font-size:22px; line-height:1.45; margin:0 0 14px; word-break:break-word; }
+
+    .media{ display:grid; grid-template-columns: 1fr; gap:12px; margin: 10px 0 14px; }
+    .media img{
+      width:100%; border-radius:16px; border:1px solid var(--stroke);
+      background:rgba(255,255,255,.03); display:block;
     }
 
-    .resultFallback{
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    .input{
+      width:100%; font-size:18px; padding:14px 14px;
+      border-radius:16px; border:1px solid var(--stroke);
+      background:rgba(255,255,255,.06); color:var(--fg); outline:none;
+    }
+    .input:focus{
+      border-color: rgba(200,255,46,.65);
+      box-shadow: 0 0 0 3px rgba(200,255,46,.12);
+    }
+
+    .hint{ margin-top:10px; color:var(--muted); font-size:14px; }
+    .hint .ans{ color: rgba(255,255,255,.9); }
+
+    .toast{
+      margin-top:12px; padding:12px 14px; border-radius:16px;
+      border:1px solid var(--stroke); background:rgba(255,255,255,.06);
       display:none;
-      margin:10px 0 14px;
-      font-size:40px;
-      font-weight:900;
-      letter-spacing:.04em;
     }
-    .resultFallback.ok{ color: var(--lime); }
-    .resultFallback.ng{ color: rgba(255,255,255,.85); }
+    .toast.show{ display:block; }
+    .toast.ok{ border-color: rgba(34,197,94,.55); }
+    .toast.ng{ border-color: rgba(255,77,77,.55); }
+    .toast strong{ display:block; margin-bottom:4px; }
 
-    @keyframes popIn {
-      0%   { transform: scale(.92); opacity: .0; }
-      60%  { transform: scale(1.03); opacity: 1; }
-      100% { transform: scale(1); }
-    }
-    .overlay.show .resultMsg{
-      animation: popIn .22s ease both;
-    }
-
-    .panelBtns{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .continueBtn{ width:220px; }
-
-    .panelMini{
-      display:flex;
-      gap:18px;
-      align-items:center;
-      font-size:18px;
-    }
-    .panelMini .saved{
-      opacity:.35;
-      cursor:pointer;
-      user-select:none;
-    }
-    .panelMini .saved.on{ opacity:1; }
-
-    /* ===== Script bottom sheet ===== */
-    .sheet{
-      position:fixed;
-      left:0; right:0;
-      bottom:-110%;
-      background: rgba(40, 80, 50, .72);
-      border-top:3px solid var(--lime);
-      box-shadow: 0 -16px 40px rgba(0,0,0,.55);
-      transition: bottom .18s ease;
-      z-index:70;
-      padding:14px;
-    }
-    .sheet.show{ bottom:0; }
-
-    .sheetInner{ max-width:980px; margin:0 auto; }
-    .sheetTop{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
-
-    .cols{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      margin-top:12px;
-    }
-
-    .col{
-      border:1px solid rgba(200,255,46,.32);
-      border-radius:14px;
-      padding:12px;
-      background: rgba(200,255,46,.16);
-      white-space:pre-wrap;
-      max-height: 46vh;
-      overflow:auto;
-    }
-
-    #scriptJa{ font-size:27px; line-height:1.45; font-weight:400; }
-    #scriptJa rt{ font-size:0.80em; opacity:0.92; }
-    #scriptEn{ font-size:14px; line-height:1.5; color:rgba(255,255,255,.85); }
-
-    @media (max-width:520px){
-      .audioBtn{ width:64px; }
-      .checkBtn{ width:208px; }
-      .promptJa{ font-size:25px; }
-      #scriptJa{ font-size:25px; }
-      .cols{ grid-template-columns: 1fr; }
-    }
-
-    /* ===== mini-markup styles ===== */
-    .mk-hl{ background:rgba(255,255,0,.25); padding:0 .22em; border-radius:.28em; }
-    .mk-big{ font-size:1.22em; font-weight:900; }
-    .mk-small{ font-size:.86em; opacity:.98; }
-    .mk-i{ font-style:italic; }
-    .mk-b{ font-weight:900; letter-spacing:.02em; }
-    .mk-u{ text-decoration: underline; text-underline-offset: .18em; }
-    .mk-h{ font-size:1.18em; font-weight:900; letter-spacing:.02em; } /* for [h] */
+    .small{ font-size:12px; color:rgba(255,255,255,.5); margin-top:10px; }
+    .warn{ color: rgba(255,200,0,.9); }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-
-    <!-- Exit confirm bar -->
-    <div class="exitBar" id="exitBar">
-      <div class="exitBarInner">
-        <img class="btnImg exitBtnImg" id="exitContinue"
-             src="assets/ui/buttons/button-exit_confirmation-continue.png"
-             alt="Continue" />
-        <img class="btnImg exitBtnImg" id="exitQuit"
-             src="assets/ui/buttons/button-exit_confirmation-quit.png"
-             alt="Quit" />
-      </div>
+    <div class="topbar">
+      <div class="pill"><span>Progress</span><strong id="counter">0/0</strong></div>
+      <div class="pill"><span>Score</span><strong id="score">0</strong></div>
+      <button class="btn btn-danger" id="exitBtn">Exit</button>
     </div>
 
-    <!-- Top area -->
-    <div class="top">
-      <div class="leftTop">
-        <img class="btnImg exitBtn" id="exitBtn"
-             src="assets/ui/buttons/button-exit.png"
-             alt="Exit" />
+    <div class="main">
+      <div class="card">
+        <div class="progress"><div id="bar"></div></div>
 
-        <div class="statusRow">
-          <div class="statusPill" id="qCount">Q: 1/1</div>
-          <div class="statusPill" id="scoreBox">Score: 0/1</div>
+        <p class="q-title" id="setTitle">Dictation Quiz</p>
+        <p class="q-text" id="qText">Loading...</p>
+
+        <div class="media" id="media"></div>
+
+        <div class="row" style="margin-bottom:10px;">
+          <button class="btn btn-primary" id="playBtn">▶ Play</button>
+          <button class="btn" id="replayBtn">↻ Replay</button>
+          <span class="small">※ 自動再生しません（ブラウザ制限があるため）。必ず Play を押してね。</span>
         </div>
-      </div>
 
-      <div class="uiToggle">
-        <div class="uiPill on" id="uiEn">English UI</div>
-        <div class="uiPill" id="uiJa">日本語UI</div>
-      </div>
-    </div>
+        <input class="input" id="answerInput" placeholder="聞こえたとおりに入力…" autocomplete="off" />
 
-    <!-- Instruction area -->
-    <div class="inst">
-      <img class="btnImg audioBtn" id="playBtn"
-           src="assets/ui/buttons/button-audio-play.png"
-           alt="Play" />
-      <img class="btnImg audioBtn" id="pauseBtn"
-           src="assets/ui/buttons/button-audio-pause.png"
-           alt="Pause" style="display:none;" />
-      <div class="instText" id="instText">Listen</div>
-    </div>
-
-    <!-- Prompt area -->
-    <div class="promptBox">
-      <p class="promptJa" id="promptJa"></p>
-      <p class="promptEn" id="promptEn"></p>
-    </div>
-
-    <!-- Images -->
-    <div class="grid" id="imgGrid" style="display:none;"></div>
-
-    <!-- Choices / typing -->
-    <div class="choices" id="choices"></div>
-  </div>
-
-  <!-- Bottom bar -->
-  <div class="bottomBar">
-    <div class="bottomInner">
-      <div style="width:1px;"></div>
-      <img class="btnImg checkBtn" id="checkBtn"
-           src="assets/ui/buttons/button-check.png"
-           alt="Check" />
-      <div class="rightActions">
-        <div class="qa" id="qaScript">🔎 <span class="sub">Script</span></div>
-        <div class="qa save" id="qaSave">🔖 <span class="sub" id="saveText">Save</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Result overlay -->
-  <div class="overlay" id="overlay" aria-hidden="true">
-    <div class="panel">
-      <div class="panelTop">
-        <img class="btnImg exitBtn" id="overlayCloseBtn"
-             src="assets/ui/buttons/button-exit.png"
-             alt="Close" />
-      </div>
-
-      <img class="resultMsg" id="resultMsg" src="" alt="Result" />
-      <div class="resultFallback" id="resultFallback">〇</div>
-
-      <div class="panelBtns">
-        <img class="btnImg continueBtn" id="continueBtn"
-             src="assets/ui/buttons/button-result-continue.png"
-             alt="Continue" />
-        <div class="panelMini">
-          <span id="panelScript" style="cursor:pointer; user-select:none;">
-            🔎 <span style="font-size:14px; color:rgba(255,255,255,.75); margin-left:6px;">Script</span>
-          </span>
-          <span class="saved" id="panelSave">
-            🔖 <span id="panelSaveText" style="font-size:14px; color:rgba(255,255,255,.75); margin-left:6px;">Save</span>
-          </span>
+        <div class="row" style="margin-top:12px;">
+          <button class="btn btn-primary" id="checkBtn">Check</button>
+          <button class="btn" id="skipBtn">Skip</button>
         </div>
+
+        <div class="hint" id="hint"></div>
+        <div class="toast" id="toast"></div>
+        <div class="small warn" id="audioWarn" style="display:none;"></div>
       </div>
     </div>
   </div>
 
-  <!-- Script sheet -->
-  <div class="sheet" id="sheet" aria-hidden="true">
-    <div class="sheetInner">
-      <div class="sheetTop">
-        <img class="btnImg exitBtn" id="sheetExitBtn"
-             src="assets/ui/buttons/button-exit.png"
-             alt="Exit" />
-        <div style="opacity:.9; font-size:14px;">Script</div>
-      </div>
+  <script>
+    // ========= Result linkage (keeps your existing result.html pattern) =========
+    const RESULT_URL = "result.html";
+    const KEY_SET_ID = "JPQ_LAST_SET_ID";
+    const KEY_SCORE  = "JPQ_LAST_SCORE";
+    const KEY_TOTAL  = "JPQ_LAST_TOTAL";
 
-      <div class="cols" id="scriptCols">
-        <div class="col" id="scriptJa"></div>
-        <div class="col" id="scriptEn"></div>
-      </div>
-    </div>
-  </div>
+    // ========= Data path (keeps your folder rule: data/) =========
+    const DEFAULT_DATA_PATH = "data/dictation.csv";
 
-<script>
-/* =========================================================
-  Quiz.html (NO upload)
-  - Reads: data/sets.csv, data/questions.csv
-  - Supports: MCQ + input/typing
-  - Correct/Incorrect overlay + SFX
-  - Markup: [b][i][u][h][hl][small][big][ruby][rt]
-========================================================= */
+    // GitHub Pages cache-bust: always fetch fresh
+    const CACHE_BUST = "v=" + Date.now();
 
-const FILES = {
-  sets: "data/sets.csv",
-  questions: "data/questions.csv",
-  ui: "data/ui_text.csv" // optional
-};
+    // ========= SFX (optional) =========
+    // If files don't exist, it won't crash. Replace paths if yours are different.
+    const SFX = {
+      correct: "assets/ui/audio/sfx_correct.mp3",
+      wrong:   "assets/ui/audio/sfx_wrong.mp3",
+      done:    "assets/ui/audio/sfx_applause.mp3",
+      click:   "assets/ui/audio/sfx_click.mp3"
+    };
 
-const LS = {
-  LAST_SET_ID: "JPQ_LAST_SET_ID",
-  LAST_SCORE:  "JPQ_LAST_SCORE",
-  LAST_TOTAL:  "JPQ_LAST_TOTAL",
-  WRONG_IDS:   "JPQ_LAST_WRONG",
-  SAVED:       "JPQ_SAVED_QIDS",
-};
+    // ========= Helpers =========
+    const $ = (id) => document.getElementById(id);
 
-const SFX_PATHS = {
-  ok:  "assets/ui/audio/sfx_pin.mp3",
-  ng:  "assets/ui/audio/sfx_bu.mp3",
-  end: "assets/ui/audio/sfx_applause.mp3",
-};
+    function getParam(name){
+      const u = new URL(location.href);
+      return u.searchParams.get(name);
+    }
 
-const RESULT_MSG = {
-  // あなたの repo に実在する PNG 名に合わせてね（存在しなくても fallback 文字が出る）
-  ok: "assets/ui/messages/message-result-yatta.png",
-  ng: "assets/ui/messages/message-result-bu.png",
-};
+    function safeAudio(src){
+      if(!src) return null;
+      const a = new Audio(src);
+      a.preload = "auto";
+      a.volume = 0.95;
+      a.addEventListener("error", () => {/* ignore */});
+      return a;
+    }
 
-const els = {
-  exitBtn: document.getElementById("exitBtn"),
-  exitBar: document.getElementById("exitBar"),
-  exitContinue: document.getElementById("exitContinue"),
-  exitQuit: document.getElementById("exitQuit"),
+    const sfxCorrect = safeAudio(SFX.correct);
+    const sfxWrong   = safeAudio(SFX.wrong);
+    const sfxDone    = safeAudio(SFX.done);
+    const sfxClick   = safeAudio(SFX.click);
 
-  qCount: document.getElementById("qCount"),
-  scoreBox: document.getElementById("scoreBox"),
+    function playSfx(a){
+      try{
+        if(!a) return;
+        a.currentTime = 0;
+        a.play().catch(()=>{});
+      }catch(e){}
+    }
 
-  uiEn: document.getElementById("uiEn"),
-  uiJa: document.getElementById("uiJa"),
+    // Dictation: normalize gently (spaces removed, lower-case)
+    function normalizeAnswer(s){
+      return (s ?? "")
+        .trim()
+        .replace(/\s+/g, "")
+        .replace(/[’‘]/g, "'")
+        .toLowerCase();
+    }
 
-  playBtn: document.getElementById("playBtn"),
-  pauseBtn: document.getElementById("pauseBtn"),
-  instText: document.getElementById("instText"),
+    function showToast(ok, title, msg){
+      const t = $("toast");
+      t.className = "toast show " + (ok ? "ok" : "ng");
+      t.innerHTML = `<strong>${title}</strong><div>${msg ?? ""}</div>`;
+    }
+    function clearToast(){
+      const t = $("toast");
+      t.className = "toast";
+      t.innerHTML = "";
+    }
 
-  promptJa: document.getElementById("promptJa"),
-  promptEn: document.getElementById("promptEn"),
-
-  imgGrid: document.getElementById("imgGrid"),
-  choices: document.getElementById("choices"),
-
-  checkBtn: document.getElementById("checkBtn"),
-  qaScript: document.getElementById("qaScript"),
-  qaSave: document.getElementById("qaSave"),
-  saveText: document.getElementById("saveText"),
-
-  overlay: document.getElementById("overlay"),
-  overlayCloseBtn: document.getElementById("overlayCloseBtn"),
-  resultMsg: document.getElementById("resultMsg"),
-  resultFallback: document.getElementById("resultFallback"),
-  continueBtn: document.getElementById("continueBtn"),
-  panelScript: document.getElementById("panelScript"),
-  panelSave: document.getElementById("panelSave"),
-  panelSaveText: document.getElementById("panelSaveText"),
-
-  sheet: document.getElementById("sheet"),
-  sheetExitBtn: document.getElementById("sheetExitBtn"),
-  scriptCols: document.getElementById("scriptCols"),
-  scriptJa: document.getElementById("scriptJa"),
-  scriptEn: document.getElementById("scriptEn"),
-};
-
-const audioQ = new Audio();   // question audio
-audioQ.preload = "auto";
-
-const sfxOk = new Audio(SFX_PATHS.ok);
-const sfxNg = new Audio(SFX_PATHS.ng);
-const sfxEnd = new Audio(SFX_PATHS.end);
-[sfxOk, sfxNg, sfxEnd].forEach(a => { a.preload = "auto"; a.volume = 1.0; });
-
-let uiLang = "en";
-let uiTextMap = {};
-
-let setId = "";
-let qRows = [];
-let idx = 0;
-let score = 0;
-let wrongIds = [];
-
-let selectedIndex = null;
-let correctIndexNow = 0;
-let typedAnswer = "";
-
-let savedQids = new Set();
-let lastWasOk = false;
-
-/* ---------------- CSV helpers ---------------- */
-function stripBOM(s){ return (s && s.charCodeAt(0) === 0xFEFF) ? s.slice(1) : s; }
-
-function parseCSV(text){
-  text = stripBOM(text || "");
-  const rows = [];
-  let row = [];
-  let cur = "";
-  let inQ = false;
-
-  for (let i=0;i<text.length;i++){
-    const ch = text[i];
-    if (inQ){
-      if (ch === '"'){
+    // ========= CSV parser (handles quotes) =========
+    function parseCSV(text){
+      const rows = [];
+      let row = [], cur = "", inQ = false;
+      for(let i=0;i<text.length;i++){
+        const ch = text[i];
         const next = text[i+1];
-        if (next === '"'){ cur += '"'; i++; }
-        else { inQ = false; }
-      } else cur += ch;
-      continue;
+
+        if(ch === '"' && inQ && next === '"'){ cur += '"'; i++; continue; }
+        if(ch === '"'){ inQ = !inQ; continue; }
+
+        if(ch === ',' && !inQ){ row.push(cur); cur = ""; continue; }
+        if((ch === '\n' || ch === '\r') && !inQ){
+          if(ch === '\r' && next === '\n') i++;
+          row.push(cur); cur = "";
+          if(row.some(c => (c ?? "").trim() !== "")) rows.push(row);
+          row = [];
+          continue;
+        }
+        cur += ch;
+      }
+      row.push(cur);
+      if(row.some(c => (c ?? "").trim() !== "")) rows.push(row);
+
+      if(rows.length === 0) return [];
+
+      const header = rows[0].map(h => (h ?? "").trim());
+      const out = [];
+      for(let r=1;r<rows.length;r++){
+        const obj = {};
+        for(let c=0;c<header.length;c++){
+          obj[header[c]] = (rows[r][c] ?? "").trim();
+        }
+        out.push(obj);
+      }
+      return out;
     }
-    if (ch === '"'){ inQ = true; continue; }
-    if (ch === ","){ row.push(cur); cur=""; continue; }
-    if (ch === "\n"){
-      row.push(cur); cur="";
-      if (row.some(c => (c||"").trim() !== "")) rows.push(row);
-      row=[]; continue;
+
+    async function loadQuestions(dataPath){
+      const url = `${dataPath}?${CACHE_BUST}`;
+      const res = await fetch(url);
+      if(!res.ok) throw new Error("Failed to load data: " + url);
+      const text = await res.text();
+      const items = parseCSV(text);
+
+      // Expected columns: id,prompt,answer,hint,img,audio
+      const questions = items.map(x => ({
+        id: x.id || "",
+        prompt: x.prompt || "聞いて入力してください",
+        answer: x.answer || "",
+        hint: x.hint || "",
+        img: x.img || "",
+        audio: x.audio || ""
+      }));
+
+      // Audio is mandatory: filter out empty answer or audio, but also show a warning
+      const bad = questions.filter(q => !q.answer || !q.audio);
+      if(bad.length){
+        $("audioWarn").style.display = "block";
+        $("audioWarn").textContent =
+          `⚠ データに不備があります（answer か audio が空欄の行が ${bad.length} 件）。その行はスキップされます。`;
+      }
+
+      return questions.filter(q => q.answer && q.audio);
     }
-    if (ch === "\r") continue;
-    cur += ch;
-  }
-  if (cur.length || row.length){
-    row.push(cur);
-    if (row.some(c => (c||"").trim() !== "")) rows.push(row);
-  }
-  if (!rows.length) return [];
 
-  const header = rows[0].map(h => (h||"").trim());
-  const out = [];
-  for (let r=1;r<rows.length;r++){
-    const obj = {};
-    for (let c=0;c<header.length;c++){
-      obj[header[c]] = (rows[r][c] ?? "").trim();
+    // ========= Game state =========
+    let questions = [];
+    let idx = 0;
+    let score = 0;
+    let voice = null; // current question audio
+
+    function updateHeader(){
+      $("counter").textContent = `${Math.min(idx+1, questions.length)}/${questions.length}`;
+      $("score").textContent = String(score);
+      const pct = questions.length ? (idx / questions.length) * 100 : 0;
+      $("bar").style.width = `${pct}%`;
     }
-    out.push(obj);
-  }
-  return out;
-}
 
-async function fetchCSV(path){
-  const res = await fetch(path, { cache:"no-store" });
-  if (!res.ok) throw new Error(`Failed to fetch ${path} (${res.status})`);
-  return parseCSV(await res.text());
-}
+    function render(){
+      clearToast();
+      updateHeader();
 
-function buildUiTextMap(rows){
-  const map = {};
-  for (const r of rows){
-    const k = (r.key || r.id || "").trim();
-    if (!k) continue;
-    map[k] = (r.value || r.text || "").trim();
-  }
-  return map;
-}
-function t(key, fallback){
-  return (uiTextMap && uiTextMap[key]) ? uiTextMap[key] : fallback;
-}
+      const q = questions[idx];
+      $("qText").textContent = q.prompt;
 
-/* ---------------- mini-markup ---------------- */
-function escapeHTML(s){
-  return (s||"").replace(/[&<>"']/g, m => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[m]));
-}
+      // hint text (optional)
+      $("hint").innerHTML = q.hint ? `Hint: <span class="ans">${escapeHtml(q.hint)}</span>` : "";
 
-/*
-  Supported:
-  [ruby]漢字[rt]かんじ[/rt][/ruby]
-  [b] [/b] , [i], [u], [h], [hl], [small], [big]
-*/
-function miniMarkupToHTML(s){
-  s = s || "";
+      // image (optional)
+      const media = $("media");
+      media.innerHTML = "";
+      if(q.img){
+        const img = document.createElement("img");
+        img.src = q.img;
+        img.alt = "quiz image";
+        img.addEventListener("error", () => { img.remove(); });
+        media.appendChild(img);
+      }
 
-  // ruby first
-  s = s.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g,
-    (_, a, b)=> `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`);
+      // audio (mandatory here)
+      voice = safeAudio(q.audio);
 
-  // escape then re-inject tags safely by escaping inside replacements
-  // For simple tags, we assume inside can already contain ruby HTML => so we don't double-escape here.
-  // We'll escape raw first, then handle tags on escaped text.
-  // BUT ruby already made HTML, so we protect it:
-  const protectedRuby = [];
-  s = s.replace(/<ruby>[\s\S]*?<\/ruby>/g, m => {
-    protectedRuby.push(m);
-    return `@@RUBY_${protectedRuby.length-1}@@`;
-  });
+      $("answerInput").value = "";
+      $("answerInput").focus();
 
-  s = escapeHTML(s);
+      // title from params (optional)
+      const setName = getParam("title") || "Dictation Quiz";
+      $("setTitle").textContent = setName;
+    }
 
-  s = s.replace(/\[b\]([\s\S]*?)\[\/b\]/g, `<span class="mk-b">$1</span>`);
-  s = s.replace(/\[i\]([\s\S]*?)\[\/i\]/g, `<span class="mk-i">$1</span>`);
-  s = s.replace(/\[u\]([\s\S]*?)\[\/u\]/g, `<span class="mk-u">$1</span>`);
-  s = s.replace(/\[h\]([\s\S]*?)\[\/h\]/g, `<span class="mk-h">$1</span>`);
-  s = s.replace(/\[hl\]([\s\S]*?)\[\/hl\]/g, `<span class="mk-hl">$1</span>`);
-  s = s.replace(/\[small\]([\s\S]*?)\[\/small\]/g, `<span class="mk-small">$1</span>`);
-  s = s.replace(/\[big\]([\s\S]*?)\[\/big\]/g, `<span class="mk-big">$1</span>`);
+    function next(){
+      idx++;
+      if(idx >= questions.length){
+        finish();
+      }else{
+        render();
+      }
+    }
 
-  // restore ruby
-  s = s.replace(/@@RUBY_(\d+)@@/g, (_, i) => protectedRuby[Number(i)] || "");
+    function finish(){
+      $("bar").style.width = "100%";
 
-  return s;
-}
+      const setId = getParam("setId") || "dictation";
+      localStorage.setItem(KEY_SET_ID, setId);
+      localStorage.setItem(KEY_SCORE, String(score));
+      localStorage.setItem(KEY_TOTAL, String(questions.length));
 
-/* ---------------- question type ---------------- */
-function isInputQuestion(q){
-  const raw = String((q.type || q.q_type || "")).trim().toLowerCase();
-  return raw === "input" || raw === "typing" || raw === "q_type_input" || raw === "type_input";
-}
+      playSfx(sfxDone);
+      setTimeout(() => { location.href = RESULT_URL; }, 450);
+    }
 
-function shuffle(arr){
-  const a = arr.slice();
-  for (let i=a.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]] = [a[j],a[i]];
-  }
-  return a;
-}
+    function check(){
+      const q = questions[idx];
+      const user = normalizeAnswer($("answerInput").value);
+      const ans  = normalizeAnswer(q.answer);
 
-/* ---------------- typing compare ---------------- */
-function kataToHira(str){
-  return (str||"").replace(/[\u30A1-\u30F6]/g, ch =>
-    String.fromCharCode(ch.charCodeAt(0) - 0x60)
-  );
-}
-function normalizeKana(str){ return kataToHira((str||"").trim()); }
-function normalizeRomaji(str){
-  let out = (str||"").trim().toLowerCase().replace(/\s+/g,"").replace(/'/g,"");
-  out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
-  out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
-  return out;
-}
-function isKanaLike(str){ return /[\u3040-\u30FF]/.test(str||""); }
-function acceptPartial(u, t){ return u && u.length>=2 && (t||"").includes(u); }
+      if(!user){
+        showToast(false, "空欄だよ", "1文字でも入力してね。");
+        return;
+      }
 
-function extractBracketAnswer(promptJa){
-  const m = String(promptJa||"").match(/\[([^\]]+)\]/);
-  return m ? m[1].trim() : "";
-}
-function getAcceptedAnswers(q){
-  const raw = (q.answer_text || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if (raw.length) return raw;
-  const br = extractBracketAnswer(q.prompt_ja);
-  if (br) return [br];
-  return [];
-}
-function checkTyped(q, userRaw){
-  const acc = getAcceptedAnswers(q);
-  if (!acc.length) return false;
+      if(user === ans){
+        score++;
+        playSfx(sfxCorrect);
+        showToast(true, "Correct!", q.answer);
+        setTimeout(next, 550);
+      }else{
+        playSfx(sfxWrong);
+        // ディクテーションは詰まりやすいので、MVPは「答えを見せて次へ」
+        showToast(false, "Not quite", `Answer: ${escapeHtml(q.answer)}`);
+        setTimeout(next, 900);
+      }
+    }
 
-  const uRaw = (userRaw||"").trim();
-  if (!uRaw) return false;
+    function playVoice(){
+      playSfx(sfxClick);
+      if(!voice){
+        showToast(false, "Audio missing", "この問題は音声がありません。CSVの audio 列を確認してね。");
+        return;
+      }
+      try{
+        voice.currentTime = 0;
+        voice.play().catch(() => {
+          showToast(false, "Audio blocked", "ブラウザが再生をブロックしました。もう一度 Play を押してね。");
+        });
+      }catch(e){
+        showToast(false, "Audio error", String(e));
+      }
+    }
 
-  if (isKanaLike(uRaw)){
-    const u = normalizeKana(uRaw);
-    const targets = acc.map(a => normalizeKana(a));
-    return targets.some(tg => u === tg || acceptPartial(u, tg));
-  } else {
-    const u = normalizeRomaji(uRaw);
-    const targets = acc.map(a => normalizeRomaji(a));
-    return targets.some(tg => u === tg || acceptPartial(u, tg));
-  }
-}
+    function escapeHtml(s){
+      return (s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
 
-/* ---------------- URL params ---------------- */
-function getParam(name){
-  const url = new URL(location.href);
-  return url.searchParams.get(name);
-}
+    // ========= Wire up =========
+    $("playBtn").addEventListener("click", playVoice);
+    $("replayBtn").addEventListener("click", playVoice);
 
-/* ---------------- saved ---------------- */
-function loadSavedSet(){
-  try{
-    const raw = localStorage.getItem(LS.SAVED);
-    if (!raw) return new Set();
-    const arr = JSON.parse(raw);
-    return new Set(Array.isArray(arr) ? arr : []);
-  }catch{
-    return new Set();
-  }
-}
-function persistSavedSet(){
-  localStorage.setItem(LS.SAVED, JSON.stringify([...savedQids]));
-}
-function updateSavedUI(qid){
-  const on = savedQids.has(qid);
-  els.qaSave.classList.toggle("on", on);
-  els.panelSave.classList.toggle("on", on);
-  els.saveText.textContent = on ? "Saved" : "Save";
-  els.panelSaveText.textContent = on ? "Saved" : "Save";
-}
+    $("checkBtn").addEventListener("click", () => { playSfx(sfxClick); check(); });
+    $("skipBtn").addEventListener("click", () => { playSfx(sfxClick); next(); });
 
-/* ---------------- UI lang ---------------- */
-function setUiLang(lang){
-  uiLang = lang;
-  els.uiEn.classList.toggle("on", uiLang==="en");
-  els.uiJa.classList.toggle("on", uiLang==="ja");
-  if (uiLang === "ja"){
-    els.instText.textContent = t("inst_listen_ja", "Listen (kiki mashō)");
-  } else {
-    els.instText.textContent = t("inst_listen_en", "Listen (kiki mashō)");
-  }
-}
-
-/* ---------------- images ---------------- */
-function renderImages(q){
-  els.imgGrid.innerHTML = "";
-  const imgs = (q.image_files || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if (!imgs.length){
-    els.imgGrid.style.display = "none";
-    return;
-  }
-  els.imgGrid.style.display = "";
-  imgs.forEach(src=>{
-    const card = document.createElement("div");
-    card.className = "imgCard";
-    const img = document.createElement("img");
-    img.src = src;
-    img.alt = "";
-    card.appendChild(img);
-    els.imgGrid.appendChild(card);
-  });
-}
-
-/* ---------------- script sheet ---------------- */
-function renderScript(q){
-  const ja = (q.script_ja || "").trim();
-  const en = (q.script_en || "").trim();
-  els.scriptJa.innerHTML = miniMarkupToHTML(ja || "");
-  els.scriptEn.innerHTML = miniMarkupToHTML(en || "");
-
-  if (ja && !en){
-    els.scriptCols.style.gridTemplateColumns = "1fr";
-    els.scriptEn.style.display = "none";
-  } else {
-    els.scriptCols.style.gridTemplateColumns = "";
-    els.scriptEn.style.display = "";
-  }
-}
-
-/* ---------------- choices / typing ---------------- */
-function renderChoices(q){
-  els.choices.innerHTML = "";
-  els.choices.classList.remove("twoCol");
-  selectedIndex = null;
-  correctIndexNow = 0;
-
-  const rawParts = (q.choices_text || "").split("|").map(v=>v.trim()).filter(Boolean);
-  const pairs = rawParts.map((text, origIdx)=>({ text, origIdx }));
-
-  // if listen-only type, no shuffle
-  const qt = String((q.type || q.q_type || "")).trim().toLowerCase();
-  const noShuffle = (qt === "q_type_1_listen_only");
-  const shown = noShuffle ? pairs : shuffle(pairs);
-
-  // answer_index supports 0-based OR 1-based
-  let correctOrig = parseInt(q.answer_index || "0", 10);
-  if (!Number.isFinite(correctOrig)) correctOrig = 0;
-  if (correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
-    correctOrig = correctOrig - 1;
-  }
-  correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
-  if (correctIndexNow < 0) correctIndexNow = 0;
-
-  const long = shown.some(p => (p.text || "").length > 22);
-  els.choices.classList.toggle("twoCol", !long);
-
-  shown.forEach((p, i)=>{
-    const b = document.createElement("button");
-    b.className = "choiceBtn";
-    b.innerHTML = miniMarkupToHTML(p.text);
-    b.addEventListener("click", ()=>{
-      selectedIndex = i;
-      [...els.choices.querySelectorAll(".choiceBtn")].forEach(x=>x.classList.remove("active"));
-      b.classList.add("active");
+    $("answerInput").addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){ check(); }
     });
-    els.choices.appendChild(b);
-  });
-}
 
-function renderTyping(q){
-  els.choices.innerHTML = "";
-  els.choices.classList.remove("twoCol");
-  typedAnswer = "";
+    $("exitBtn").addEventListener("click", () => {
+      playSfx(sfxClick);
+      if(confirm("Exit the quiz?")){
+        // keep your existing flow; change if your app uses a different page
+        location.href = "menu.html";
+      }
+    });
 
-  const wrap = document.createElement("div");
-  wrap.className = "typeWrap";
+    // ========= Boot =========
+    (async function boot(){
+      try{
+        const dataPath = getParam("data") || DEFAULT_DATA_PATH;
+        questions = await loadQuestions(dataPath);
 
-  const input = document.createElement("input");
-  input.className = "typeInput";
-  input.type = "text";
-  input.autocomplete = "off";
-  input.autocapitalize = "none";
-  input.spellcheck = false;
-  input.placeholder = (uiLang==="ja")
-    ? t("type_placeholder_ja", "ここに入力（かな / カナ / romaji）")
-    : t("type_placeholder_en", "Type here (かな / カナ / romaji)");
+        if(!questions.length){
+          $("qText").textContent = "No valid questions found (audio/answer required).";
+          $("hint").textContent = "CSVの audio と answer が入っているか確認してね。";
+          return;
+        }
 
-  const hint = document.createElement("div");
-  hint.className = "typeHint";
-  hint.textContent = (uiLang==="ja")
-    ? t("type_hint_ja", "かな/ローマ字OK。部分一致OK（2文字以上）")
-    : t("type_hint_en", "Kana or romaji OK. Partial OK (min 2 chars).");
-
-  input.addEventListener("input", ()=> typedAnswer = input.value);
-  input.addEventListener("keydown", (e)=>{
-    if (e.key === "Enter"){
-      e.preventDefault();
-      els.checkBtn.click();
-    }
-  });
-
-  wrap.appendChild(input);
-  wrap.appendChild(hint);
-  els.choices.appendChild(wrap);
-
-  setTimeout(()=>input.focus(), 60);
-}
-
-/* ---------------- audio ---------------- */
-function setQuestionAudio(src){
-  if (src){
-    audioQ.src = src;
-    els.playBtn.style.opacity = "1";
-    els.playBtn.style.pointerEvents = "auto";
-  } else {
-    audioQ.removeAttribute("src");
-    els.playBtn.style.opacity = ".35";
-    els.playBtn.style.pointerEvents = "none";
-    els.pauseBtn.style.display = "none";
-    els.playBtn.style.display = "";
-  }
-}
-function playQuestionAudio(){
-  if (!audioQ.src) return;
-  audioQ.currentTime = 0;
-  audioQ.play().then(()=>{
-    els.playBtn.style.display = "none";
-    els.pauseBtn.style.display = "";
-  }).catch(()=>{});
-}
-function pauseQuestionAudio(){
-  audioQ.pause();
-  els.pauseBtn.style.display = "none";
-  els.playBtn.style.display = "";
-}
-audioQ.addEventListener("ended", ()=>{
-  els.pauseBtn.style.display = "none";
-  els.playBtn.style.display = "";
-});
-
-function playSfx(ok, isLast){
-  const a = isLast && ok ? sfxEnd : (ok ? sfxOk : sfxNg);
-  try{
-    a.currentTime = 0;
-    const p = a.play();
-    if (p && typeof p.catch === "function") p.catch(()=>{});
-  }catch{}
-}
-
-/* ---------------- overlay / sheet ---------------- */
-function showOverlay(ok){
-  lastWasOk = ok;
-
-  // set image (and fallback to text if png missing)
-  const src = ok ? RESULT_MSG.ok : RESULT_MSG.ng;
-  els.resultMsg.style.display = "";
-  els.resultMsg.src = src;
-  els.resultFallback.style.display = "none";
-
-  els.resultFallback.textContent = ok ? "〇" : "×";
-  els.resultFallback.classList.toggle("ok", ok);
-  els.resultFallback.classList.toggle("ng", !ok);
-
-  // if image fails, show fallback
-  els.resultMsg.onerror = () => {
-    els.resultMsg.style.display = "none";
-    els.resultFallback.style.display = "block";
-  };
-
-  els.overlay.classList.add("show");
-  els.overlay.setAttribute("aria-hidden", "false");
-}
-function hideOverlay(){
-  els.overlay.classList.remove("show");
-  els.overlay.setAttribute("aria-hidden", "true");
-}
-
-function showSheet(){
-  els.sheet.classList.add("show");
-  els.sheet.setAttribute("aria-hidden", "false");
-}
-function hideSheet(){
-  els.sheet.classList.remove("show");
-  els.sheet.setAttribute("aria-hidden", "true");
-}
-
-/* ---------------- render question ---------------- */
-function render(){
-  const q = qRows[idx];
-
-  els.qCount.textContent = `Q: ${idx+1}/${qRows.length}`;
-  els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
-
-  els.promptJa.innerHTML = miniMarkupToHTML(q.prompt_ja || "");
-  els.promptEn.textContent = q.prompt_en || "";
-
-  setQuestionAudio(q.audio_file || "");
-  renderImages(q);
-  renderScript(q);
-
-  if (isInputQuestion(q)) renderTyping(q);
-  else renderChoices(q);
-
-  const qid = (q.question_id || `${idx}`);
-  updateSavedUI(qid);
-
-  hideOverlay();
-  hideSheet();
-}
-
-/* ---------------- flow ---------------- */
-function finish(){
-  localStorage.setItem(LS.LAST_SET_ID, setId);
-  localStorage.setItem(LS.LAST_TOTAL, String(qRows.length));
-  const pct = Math.round((score / qRows.length) * 100);
-  localStorage.setItem(LS.LAST_SCORE, String(pct));
-  localStorage.setItem(LS.WRONG_IDS, JSON.stringify(wrongIds));
-  location.href = "result.html";
-}
-
-function next(){
-  idx += 1;
-  if (idx >= qRows.length){
-    finish();
-    return;
-  }
-  render();
-  playQuestionAudio();
-}
-
-/* ---------------- events ---------------- */
-els.playBtn.addEventListener("click", playQuestionAudio);
-els.pauseBtn.addEventListener("click", pauseQuestionAudio);
-
-els.checkBtn.addEventListener("click", ()=>{
-  const q = qRows[idx];
-
-  let ok = false;
-  if (isInputQuestion(q)){
-    ok = checkTyped(q, typedAnswer);
-  } else {
-    ok = (selectedIndex !== null) && (selectedIndex === correctIndexNow);
-  }
-
-  if (ok){
-    score += 1;
-  } else {
-    wrongIds.push(q.question_id || String(idx));
-  }
-
-  // update pill now
-  els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
-
-  // SFX (click event = safe)
-  const isLast = (idx === qRows.length - 1);
-  playSfx(ok, isLast);
-
-  // overlay (THIS is where 〇/× is decided)
-  showOverlay(ok);
-});
-
-els.continueBtn.addEventListener("click", ()=>{
-  hideOverlay();
-  next();
-});
-els.overlayCloseBtn.addEventListener("click", hideOverlay);
-
-/* Exit confirm */
-els.exitBtn.addEventListener("click", ()=> els.exitBar.classList.add("show"));
-els.exitContinue.addEventListener("click", ()=> els.exitBar.classList.remove("show"));
-els.exitQuit.addEventListener("click", ()=> location.href = "menu.html");
-
-/* Script sheet */
-els.qaScript.addEventListener("click", showSheet);
-els.panelScript.addEventListener("click", ()=>{ hideOverlay(); showSheet(); });
-els.sheetExitBtn.addEventListener("click", hideSheet);
-
-/* Save toggle */
-function toggleSaveCurrent(){
-  const q = qRows[idx];
-  const qid = (q.question_id || `${idx}`);
-  if (savedQids.has(qid)) savedQids.delete(qid);
-  else savedQids.add(qid);
-  persistSavedSet();
-  updateSavedUI(qid);
-}
-els.qaSave.addEventListener("click", toggleSaveCurrent);
-els.panelSave.addEventListener("click", toggleSaveCurrent);
-
-/* UI toggle */
-els.uiEn.addEventListener("click", ()=>{ setUiLang("en"); render(); });
-els.uiJa.addEventListener("click", ()=>{ setUiLang("ja"); render(); });
-
-/* keyboard */
-document.addEventListener("keydown", (e)=>{
-  if (e.key === "Escape"){
-    hideOverlay();
-    hideSheet();
-    els.exitBar.classList.remove("show");
-  }
-});
-
-/* ---------------- boot ---------------- */
-(async function boot(){
-  try{
-    savedQids = loadSavedSet();
-
-    const [setsRows, questionsRows] = await Promise.all([
-      fetchCSV(FILES.sets),
-      fetchCSV(FILES.questions),
-    ]);
-
-    try{
-      uiTextMap = buildUiTextMap(await fetchCSV(FILES.ui));
-    }catch{
-      uiTextMap = {};
-    }
-
-    // accept both ?set_id=... and ?set=...
-    const requested = getParam("set_id") || getParam("set") || getParam("setId");
-    const last = localStorage.getItem(LS.LAST_SET_ID) || "";
-
-    const published = setsRows.filter(s => String(s.is_published||"").trim() === "1");
-    const firstPublished = published[0]?.set_id || setsRows[0]?.set_id || "";
-
-    setId = requested || last || firstPublished || "";
-    if (!setId){
-      alert("No set_id found. Please add data/sets.csv");
-      location.href = "menu.html";
-      return;
-    }
-
-    qRows = questionsRows.filter(q => String(q.set_id||"") === String(setId));
-    if (!qRows.length){
-      // fallback: if param is actually question_set_id
-      qRows = questionsRows.filter(q => String(q.question_set_id||"") === String(setId));
-    }
-
-    if (!qRows.length){
-      alert(`No questions found for set_id: ${setId}`);
-      location.href = "menu.html";
-      return;
-    }
-
-    setUiLang("en");
-
-    idx = 0;
-    score = 0;
-    wrongIds = [];
-
-    render();
-    playQuestionAudio();
-  }catch(e){
-    console.error(e);
-    alert("Could not load CSV from GitHub Pages. Check data/sets.csv and data/questions.csv");
-    location.href = "menu.html";
-  }
-})();
-</script>
+        idx = 0;
+        score = 0;
+        render();
+      }catch(err){
+        $("qText").textContent = "Failed to load quiz data.";
+        $("hint").textContent = String(err);
+      }
+    })();
+  </script>
 </body>
 </html>
