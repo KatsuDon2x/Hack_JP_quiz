@@ -1,0 +1,4 @@
+id,prompt,answer,hint,img,audio
+q001,聞いて入力してください,もとに,「based on」,assets/quiz/images/q001.png,assets/quiz/audio/q001.mp3
+q002,聞いて入力してください,おいて,「at / in」,,assets/quiz/audio/q002.mp3
+q003,聞いて入力してください,かわり,「instead of」,,assets/quiz/audio/q003.mp3
