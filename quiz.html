@@ -512,15 +512,12 @@
 <script>
 /* =========================================================
    Quiz (GitHub Pages)
-   - Fetches CSV from /data
-   - MCQ + typing input questions
-   - Uses your existing UI + assets paths
 ========================================================= */
 
 const FILES = {
   sets: "data/sets.csv",
   questions: "data/questions.csv",
-  ui: "data/ui_text.csv", // optional
+  ui: "data/ui_text.csv",
 };
 
 const LS = {
@@ -532,7 +529,6 @@ const LS = {
 };
 
 const els = {
-  // top
   exitBtn: document.getElementById("exitBtn"),
   exitBar: document.getElementById("exitBar"),
   exitContinue: document.getElementById("exitContinue"),
@@ -544,35 +540,28 @@ const els = {
   uiEn: document.getElementById("uiEn"),
   uiJa: document.getElementById("uiJa"),
 
-  // instruction
   playBtn: document.getElementById("playBtn"),
   pauseBtn: document.getElementById("pauseBtn"),
   instText: document.getElementById("instText"),
 
-  // prompt
   promptJa: document.getElementById("promptJa"),
   promptEn: document.getElementById("promptEn"),
 
-  // content
   imgGrid: document.getElementById("imgGrid"),
   choices: document.getElementById("choices"),
 
-  // bottom
   checkBtn: document.getElementById("checkBtn"),
   qaScript: document.getElementById("qaScript"),
   qaSave: document.getElementById("qaSave"),
   saveText: document.getElementById("saveText"),
 
-  // overlay
   overlay: document.getElementById("overlay"),
   overlayCloseBtn: document.getElementById("overlayCloseBtn"),
-  resultMsg: document.getElementById("resultMsg"),
   continueBtn: document.getElementById("continueBtn"),
   panelScript: document.getElementById("panelScript"),
   panelSave: document.getElementById("panelSave"),
   panelSaveText: document.getElementById("panelSaveText"),
 
-  // sheet
   sheet: document.getElementById("sheet"),
   sheetExitBtn: document.getElementById("sheetExitBtn"),
   scriptCols: document.getElementById("scriptCols"),
@@ -583,11 +572,10 @@ const els = {
 const audio = new Audio();
 audio.preload = "auto";
 
-let uiLang = "en"; // "en" | "ja"
+let uiLang = "en";
 let uiTextMap = {};
 
 let setId = "";
-let setMeta = null;
 let qRows = [];
 let idx = 0;
 
@@ -605,40 +593,40 @@ function stripBOM(s){ return (s && s.charCodeAt(0) === 0xFEFF) ? s.slice(1) : s;
 function parseCSV(text){
   text = stripBOM(text || "");
   const rows = [];
-  let row = [];
-  let cur = "";
-  let inQ = false;
+  let row = [], cur = "", inQ = false;
 
-  for (let i=0;i<text.length;i++){
+  for(let i=0;i<text.length;i++){
     const ch = text[i];
-    if (inQ){
-      if (ch === '"'){
+    if(inQ){
+      if(ch === '"'){
         const next = text[i+1];
-        if (next === '"'){ cur += '"'; i++; }
-        else { inQ = false; }
-      } else cur += ch;
+        if(next === '"'){ cur += '"'; i++; }
+        else inQ = false;
+      }else cur += ch;
       continue;
     }
-    if (ch === '"'){ inQ = true; continue; }
-    if (ch === ","){ row.push(cur); cur=""; continue; }
-    if (ch === "\n"){
+    if(ch === '"'){ inQ = true; continue; }
+    if(ch === ","){ row.push(cur); cur=""; continue; }
+    if(ch === "\n"){
       row.push(cur); cur="";
-      if (row.some(c => (c||"").trim() !== "")) rows.push(row);
-      row=[]; continue;
+      if(row.some(c => (c||"").trim() !== "")) rows.push(row);
+      row = [];
+      continue;
     }
-    if (ch === "\r") continue;
+    if(ch === "\r") continue;
     cur += ch;
   }
-  if (cur.length || row.length){
+  if(cur.length || row.length){
     row.push(cur);
-    if (row.some(c => (c||"").trim() !== "")) rows.push(row);
+    if(row.some(c => (c||"").trim() !== "")) rows.push(row);
   }
-  if (!rows.length) return [];
+  if(!rows.length) return [];
+
   const header = rows[0].map(h => (h||"").trim());
   const out = [];
-  for (let r=1;r<rows.length;r++){
+  for(let r=1;r<rows.length;r++){
     const obj = {};
-    for (let c=0;c<header.length;c++){
+    for(let c=0;c<header.length;c++){
       obj[header[c]] = (rows[r][c] ?? "").trim();
     }
     out.push(obj);
@@ -648,15 +636,15 @@ function parseCSV(text){
 
 async function fetchCSV(path){
   const res = await fetch(path, { cache:"no-store" });
-  if (!res.ok) throw new Error(`Failed to fetch ${path} (${res.status})`);
+  if(!res.ok) throw new Error(`Failed to fetch ${path} (${res.status})`);
   return parseCSV(await res.text());
 }
 
 function buildUiTextMap(rows){
   const map = {};
-  for (const r of rows){
+  for(const r of rows){
     const k = (r.key || r.id || "").trim();
-    if (!k) continue;
+    if(!k) continue;
     map[k] = (r.value || r.text || "").trim();
   }
   return map;
@@ -675,18 +663,15 @@ function escapeHTML(s){
 
 function miniMarkupToHTML(s){
   s = s || "";
-
-  // ruby: [ruby]漢字[rt]かんじ[/rt][/ruby]
   s = s.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g,
-    (_, a, b)=> `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`);
-
+    (_, a, b)=> `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`
+  );
   s = s.replace(/\[b\]([\s\S]*?)\[\/b\]/g, `<span class="mk-b">$1</span>`);
   s = s.replace(/\[i\]([\s\S]*?)\[\/i\]/g, `<span class="mk-i">$1</span>`);
   s = s.replace(/\[u\]([\s\S]*?)\[\/u\]/g, `<span class="mk-u">$1</span>`);
   s = s.replace(/\[hl\]([\s\S]*?)\[\/hl\]/g, `<span class="mk-hl">$1</span>`);
   s = s.replace(/\[small\]([\s\S]*?)\[\/small\]/g, `<span class="mk-small">$1</span>`);
   s = s.replace(/\[big\]([\s\S]*?)\[\/big\]/g, `<span class="mk-big">$1</span>`);
-
   return s;
 }
 
@@ -698,7 +683,7 @@ function isInputQuestion(q){
 
 function shuffle(arr){
   const a = arr.slice();
-  for (let i=a.length-1;i>0;i--){
+  for(let i=a.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
     [a[i],a[j]] = [a[j],a[i]];
   }
@@ -727,30 +712,30 @@ function extractBracketAnswer(promptJa){
 }
 function getAcceptedAnswers(q){
   const raw = (q.answer_text || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if (raw.length) return raw;
+  if(raw.length) return raw;
   const br = extractBracketAnswer(q.prompt_ja);
-  if (br) return [br];
+  if(br) return [br];
   return [];
 }
 function checkTyped(q, userRaw){
   const acc = getAcceptedAnswers(q);
-  if (!acc.length) return false;
+  if(!acc.length) return false;
 
   const uRaw = (userRaw||"").trim();
-  if (!uRaw) return false;
+  if(!uRaw) return false;
 
-  if (isKanaLike(uRaw)){
+  if(isKanaLike(uRaw)){
     const u = normalizeKana(uRaw);
     const targets = acc.map(a => normalizeKana(a));
     return targets.some(tg => u === tg || acceptPartial(u, tg));
-  } else {
+  }else{
     const u = normalizeRomaji(uRaw);
     const targets = acc.map(a => normalizeRomaji(a));
     return targets.some(tg => u === tg || acceptPartial(u, tg));
   }
 }
 
-// ---------------- UI state helpers ----------------
+// ---------------- misc helpers ----------------
 function getParam(name){
   const url = new URL(location.href);
   return url.searchParams.get(name);
@@ -759,7 +744,7 @@ function getParam(name){
 function loadSavedSet(){
   try{
     const raw = localStorage.getItem(LS.SAVED);
-    if (!raw) return new Set();
+    if(!raw) return new Set();
     const arr = JSON.parse(raw);
     return new Set(Array.isArray(arr) ? arr : []);
   }catch{
@@ -774,20 +759,13 @@ function setUiLang(lang){
   uiLang = lang;
   els.uiEn.classList.toggle("on", uiLang==="en");
   els.uiJa.classList.toggle("on", uiLang==="ja");
-
-  // instruction label example (you can map via ui_text later)
-  if (uiLang === "ja"){
-    els.instText.textContent = t("inst_listen_ja", "Listen (kiki mashō)");
-  } else {
-    els.instText.textContent = t("inst_listen_en", "Listen (kiki mashō)");
-  }
 }
 
 // ---------------- render ----------------
 function renderImages(q){
   els.imgGrid.innerHTML = "";
   const imgs = (q.image_files || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if (!imgs.length){
+  if(!imgs.length){
     els.imgGrid.style.display = "none";
     return;
   }
@@ -809,11 +787,10 @@ function renderScript(q){
   els.scriptJa.innerHTML = miniMarkupToHTML(ja || "");
   els.scriptEn.innerHTML = miniMarkupToHTML(en || "");
 
-  // if no English script, still show JA column only
-  if (ja && !en){
+  if(ja && !en){
     els.scriptCols.style.gridTemplateColumns = "1fr";
     els.scriptEn.style.display = "none";
-  } else {
+  }else{
     els.scriptCols.style.gridTemplateColumns = "";
     els.scriptEn.style.display = "";
   }
@@ -832,14 +809,13 @@ function renderChoices(q){
   const noShuffle = (qt === "q_type_1_listen_only");
   const shown = noShuffle ? pairs : shuffle(pairs);
 
-  // answer_index supports 0-based OR 1-based
   let correctOrig = parseInt(q.answer_index || "0", 10);
-  if (!Number.isFinite(correctOrig)) correctOrig = 0;
-  if (correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
+  if(!Number.isFinite(correctOrig)) correctOrig = 0;
+  if(correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
     correctOrig = correctOrig - 1;
   }
   correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
-  if (correctIndexNow < 0) correctIndexNow = 0;
+  if(correctIndexNow < 0) correctIndexNow = 0;
 
   const long = shown.some(p => (p.text || "").length > 22);
   els.choices.classList.toggle("twoCol", !long);
@@ -883,7 +859,7 @@ function renderTyping(q){
 
   input.addEventListener("input", ()=> typedAnswer = input.value);
   input.addEventListener("keydown", (e)=>{
-    if (e.key === "Enter"){
+    if(e.key === "Enter"){
       e.preventDefault();
       els.checkBtn.click();
     }
@@ -904,21 +880,41 @@ function updateSavedUI(qid){
   els.panelSaveText.textContent = on ? "Saved" : "Save";
 }
 
+function hideOverlay(){
+  els.overlay.classList.remove("show");
+  els.overlay.setAttribute("aria-hidden", "true");
+}
+function showOverlay(){
+  els.overlay.classList.add("show");
+  els.overlay.setAttribute("aria-hidden", "false");
+}
+function hideSheet(){
+  els.sheet.classList.remove("show");
+  els.sheet.setAttribute("aria-hidden", "true");
+}
+function showSheet(){
+  els.sheet.classList.add("show");
+  els.sheet.setAttribute("aria-hidden", "false");
+}
+
 function render(){
   const q = qRows[idx];
 
-  // pills
   els.qCount.textContent = `Q: ${idx+1}/${qRows.length}`;
   els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
 
-  // prompts
-  const pJa = q.prompt_ja || "";
-  const pEn = q.prompt_en || "";
-  els.promptJa.innerHTML = miniMarkupToHTML(pJa);
-  els.promptEn.textContent = pEn;
+  els.promptJa.innerHTML = miniMarkupToHTML(q.prompt_ja || "");
+  els.promptEn.textContent = q.prompt_en || "";
+
+  // instruction label
+  if(uiLang === "ja"){
+    els.instText.textContent = t("inst_listen_ja", "Listen (kiki mashō)");
+  }else{
+    els.instText.textContent = t("inst_listen_en", "Listen (kiki mashō)");
+  }
 
   // audio
-  if (q.audio_file){
+  if(q.audio_file){
     audio.src = q.audio_file;
     els.playBtn.style.opacity = "1";
     els.playBtn.style.pointerEvents = "auto";
@@ -930,56 +926,29 @@ function render(){
     els.playBtn.style.display = "";
   }
 
-  // images
   renderImages(q);
-
-  // script
   renderScript(q);
 
-  // choices / typing
-  if (isInputQuestion(q)) renderTyping(q);
+  if(isInputQuestion(q)) renderTyping(q);
   else renderChoices(q);
 
-  // saved state
   const qid = (q.question_id || `${idx}`);
   updateSavedUI(qid);
 
-  // close any sheets/overlays
   hideOverlay();
   hideSheet();
 }
 
-// ---------------- overlay / sheet ----------------
-function showOverlay(ok){
-  // choose message image (you can customize)
-  // if you have 2 images, replace here:
-  // ok => message-result-correct.png, else => message-result-try_again.png
-  // For now, keep your pin message always.
-  els.overlay.classList.add("show");
-  els.overlay.setAttribute("aria-hidden", "false");
-}
-function hideOverlay(){
-  els.overlay.classList.remove("show");
-  els.overlay.setAttribute("aria-hidden", "true");
-}
-
-function showSheet(){
-  els.sheet.classList.add("show");
-  els.sheet.setAttribute("aria-hidden", "false");
-}
-function hideSheet(){
-  els.sheet.classList.remove("show");
-  els.sheet.setAttribute("aria-hidden", "true");
-}
-
-// ---------------- flow ----------------
+// ---------------- audio controls ----------------
 function playAudio(){
-  if (!audio.src) return;
+  if(!audio.src) return;
   audio.currentTime = 0;
   audio.play().then(()=>{
     els.playBtn.style.display = "none";
     els.pauseBtn.style.display = "";
-  }).catch(()=>{});
+  }).catch((e)=>{
+    console.log("audio play failed:", e);
+  });
 }
 function pauseAudio(){
   audio.pause();
@@ -991,6 +960,7 @@ audio.addEventListener("ended", ()=>{
   els.playBtn.style.display = "";
 });
 
+// ---------------- flow ----------------
 function finish(){
   localStorage.setItem(LS.LAST_SET_ID, setId);
   localStorage.setItem(LS.LAST_TOTAL, String(qRows.length));
@@ -1002,10 +972,7 @@ function finish(){
 
 function next(){
   idx += 1;
-  if (idx >= qRows.length){
-    finish();
-    return;
-  }
+  if(idx >= qRows.length) return finish();
   render();
   playAudio();
 }
@@ -1018,23 +985,17 @@ els.checkBtn.addEventListener("click", ()=>{
   const q = qRows[idx];
   let ok = false;
 
-  if (isInputQuestion(q)){
+  if(isInputQuestion(q)){
     ok = checkTyped(q, typedAnswer);
-  } else {
+  }else{
     ok = (selectedIndex !== null) && (selectedIndex === correctIndexNow);
   }
 
-  if (ok){
-    score += 1;
-    // keep your overlay image; if you want change image based on ok, do it here
-  } else {
-    wrongIds.push(q.question_id || String(idx));
-  }
+  if(ok) score += 1;
+  else wrongIds.push(q.question_id || String(idx));
 
-  // update pill immediately
   els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
-
-  showOverlay(ok);
+  showOverlay(); // overlay always shows; you can change image based on ok later
 });
 
 els.continueBtn.addEventListener("click", ()=>{
@@ -1057,7 +1018,7 @@ els.sheetExitBtn.addEventListener("click", hideSheet);
 function toggleSaveCurrent(){
   const q = qRows[idx];
   const qid = (q.question_id || `${idx}`);
-  if (savedQids.has(qid)) savedQids.delete(qid);
+  if(savedQids.has(qid)) savedQids.delete(qid);
   else savedQids.add(qid);
   persistSavedSet();
   updateSavedUI(qid);
@@ -1079,7 +1040,6 @@ async function boot(){
       fetchCSV(FILES.questions),
     ]);
 
-    // optional ui_text.csv
     try{
       const uiRows = await fetchCSV(FILES.ui);
       uiTextMap = buildUiTextMap(uiRows);
@@ -1087,37 +1047,28 @@ async function boot(){
       uiTextMap = {};
     }
 
-    // choose set_id
     const requested = getParam("set") || getParam("set_id");
     const last = localStorage.getItem(LS.LAST_SET_ID) || "";
     const published = setsRows.filter(s => String(s.is_published||"").trim() === "1");
     const firstPublished = published[0]?.set_id || setsRows[0]?.set_id || "";
 
     setId = requested || last || firstPublished || "";
-    if (!setId){
+    if(!setId){
       alert("No set_id found. Please add data/sets.csv");
       location.href = "menu.html";
       return;
     }
 
-    setMeta = setsRows.find(s => s.set_id === setId) || null;
-
-    // filter questions by set_id
     qRows = questionsRows.filter(q => q.set_id === setId);
+    if(qRows.length > 10) qRows = qRows.slice(0, 10);
 
-    // optional: limit to 10
-    if (qRows.length > 10) qRows = qRows.slice(0, 10);
-
-    if (!qRows.length){
+    if(!qRows.length){
       alert(`No questions found for set_id: ${setId}`);
       location.href = "menu.html";
       return;
     }
 
-    // init UI language
     setUiLang("en");
-
-    // init state
     idx = 0;
     score = 0;
     wrongIds = [];
@@ -1133,5 +1084,6 @@ async function boot(){
 
 boot();
 </script>
+
 </body>
 </html>
