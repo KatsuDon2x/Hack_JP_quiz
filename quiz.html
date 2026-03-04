@@ -11,7 +11,7 @@
       --muted:rgba(255,255,255,.65);
       --lime:#C8FF2E;
 
-      --panel-bg: #162c40;          /* solid = crisp */
+      --panel-bg: #162c40;
       --panel-border: rgba(255,255,255,.18);
       --darkbar: rgba(45,45,45,.92);
     }
@@ -101,14 +101,14 @@
     .promptBox{ margin:10px 0 12px; }
 
     .promptJa{
-      font-size:27px;      /* main +20% */
+      font-size:27px;
       line-height:1.45;
       margin:0 0 6px;
       font-weight:450;
     }
     .promptJa ruby{ ruby-position: over; }
     .promptJa rt{
-      font-size:0.80em;    /* ruby ~+50% clearer */
+      font-size:0.80em;
       opacity:0.92;
       letter-spacing:0.02em;
     }
@@ -162,6 +162,28 @@
       font-weight:900;
     }
 
+    /* ===== typing input ===== */
+    .typeWrap{
+      display:grid;
+      gap:10px;
+      margin-top:6px;
+    }
+    .typeInput{
+      width:100%;
+      box-sizing:border-box;
+      padding:14px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);
+      color:#fff;
+      font-size:16px;
+      outline:none;
+    }
+    .typeHint{
+      font-size:12px;
+      color:rgba(255,255,255,.62);
+    }
+
     /* ===== bottom bar ===== */
     .bottomBar{
       position:fixed;
@@ -180,7 +202,6 @@
       pointer-events:none;
     }
 
-    /* check button +20% */
     .checkBtn{ width:216px; pointer-events:auto; }
 
     .rightActions{
@@ -188,7 +209,6 @@
       gap:10px;
       align-items:flex-end;
       pointer-events:auto;
-
     }
     .qa{
       display:flex;
@@ -206,15 +226,8 @@
     }
     .qa.save{ opacity:.35; }
     .qa.save.on{ opacity:1; }
-    .qa .sub{ font-size:12px; color:var(--muted); }
 
-    .qa.disabled{
-      opacity:.28;
-      pointer-events:none;
-      filter: grayscale(1);
-    }
-
-    /* ===== Exit confirm bar (FIXED: smaller + side-by-side) ===== */
+    /* ===== Exit confirm bar ===== */
     .exitBar{
       position:fixed;
       left:0; right:0;
@@ -236,19 +249,19 @@
       margin-top:10px;
       padding:12px;
       display:flex;
-      flex-direction:row;          /* side-by-side */
+      flex-direction:row;
       justify-content: space-between;
       align-items:center;
       gap:14px;
-      flex-wrap:wrap;              /* small window => stack */
+      flex-wrap:wrap;
       pointer-events:auto;
     }
     .exitBtnImg{
-      width:min(140px, 30vw);      /* smaller */
+      width:min(140px, 30vw);
       max-width:260px;
     }
 
-    /* ===== Result overlay (CRISP) ===== */
+    /* ===== Result overlay ===== */
     .overlay{
       position:fixed;
       inset:0;
@@ -257,6 +270,7 @@
       justify-content:center;
       padding-top:36px;
       z-index:60;
+      background:rgba(0,0,0,.35);
     }
     .overlay.show{ display:flex; }
 
@@ -343,7 +357,6 @@
       gap:12px;
       margin-top:12px;
     }
-    .cols.oneCol{ grid-template-columns: 1fr; }
 
     .col{
       border:1px solid rgba(200,255,46,.32);
@@ -359,8 +372,6 @@
     #scriptJa rt{ font-size:0.80em; opacity:0.92; }
     #scriptEn{ font-size:14px; line-height:1.5; color:rgba(255,255,255,.85); }
 
-    .hidden{ display:none !important; }
-
     @media (max-width:520px){
       .exitBtn{ width:78px; }
       .audioBtn{ width:64px; }
@@ -369,45 +380,15 @@
       #scriptJa{ font-size:25px; }
       .cols{ grid-template-columns: 1fr; }
     }
-  /* ===== mini-markup styles ===== */
-.thick{ font-weight:1900; letter-spacing:.02em; }
 
-.mk-hl{ background:rgba(255,255,0,.25); padding:0 .22em; border-radius:.28em; }
-.mk-big{ font-size:1.22em; font-weight:900; }
-.mk-small{ font-size:.86em; opacity:.98; }
-.mk-i{ font-style:italic; }
-u{ text-underline-offset: .18em; }
-
-/* ===== Keep-going modal (after Round 1 if mistakes exist) ===== */
-.keepGoing{
-  position:fixed; inset:0;
-  display:none;
-  align-items:center; justify-content:center;
-  background:rgba(0,0,0,.9);
-  z-index:120;
-  padding:18px;
-}
-.keepGoing.show{ display:flex; }
-.keepGoing img{
-  width:min(520px, 86vw);
-  height:auto;
-  user-select:none;
-  -webkit-user-drag:none;
-}
-.keepFallback{
-  width:min(520px, 86vw);
-  padding:18px 16px;
-  border-radius:18px;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(255,255,255,.06);
-  backdrop-filter: blur(10px);
-  box-shadow:0 18px 50px rgba(0,0,0,.55);
-  text-align:center;
-}
-.keepFallback .main{ font-size:30px; font-weight:900; margin:4px 0 6px; }
-.keepFallback .rb{ font-size:14px; opacity:.85; margin-bottom:6px; }
-.keepFallback .en{ font-size:14px; opacity:.85; }
-</style>
+    /* ===== mini-markup styles (MATCHES JS) ===== */
+    .mk-hl{ background:rgba(255,255,0,.25); padding:0 .22em; border-radius:.28em; }
+    .mk-big{ font-size:1.22em; font-weight:900; }
+    .mk-small{ font-size:.86em; opacity:.98; }
+    .mk-i{ font-style:italic; }
+    .mk-b{ font-weight:900; letter-spacing:.02em; }
+    .mk-u{ text-decoration: underline; text-underline-offset: .18em; }
+  </style>
 </head>
 
 <body>
@@ -464,7 +445,7 @@ u{ text-underline-offset: .18em; }
     <!-- Images -->
     <div class="grid" id="imgGrid" style="display:none;"></div>
 
-    <!-- Choices -->
+    <!-- Choices / typing -->
     <div class="choices" id="choices"></div>
   </div>
 
@@ -482,25 +463,9 @@ u{ text-underline-offset: .18em; }
     </div>
   </div>
 
-  
-<!-- Keep-going modal (shown once after Round 1 if mistakes exist) -->
-<div id="keepGoingModal" class="keepGoing" aria-hidden="true">
-  <img id="keepGoingImg" src="assets/ui/messages/message-keep_going.png" alt="Keep going" />
-  <div id="keepGoingFallback" class="keepFallback" style="display:none;">
-    <div class="rb">ぜっこうちょう</div>
-    <div class="main">絶好調！</div>
-    <div class="en">Zekkōchō<br>We're on a roll!!</div>
-    <div style="height:14px"></div>
-    <div class="rb">どんどん　いこう</div>
-    <div class="main">どんどん行こう！</div>
-    <div class="en">Dondon ikō<br>Let's keep going!</div>
-    <div style="margin-top:14px; font-size:12px; opacity:.65;">(Tap anywhere)</div>
-  </div>
-</div>
-
-<!-- Result overlay -->
-  <div class="overlay" id="overlay">
-    <div class="panel" id="resultPanel">
+  <!-- Result overlay -->
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="panel">
       <div class="panelTop">
         <img class="btnImg exitBtn" id="overlayCloseBtn"
              src="assets/ui/buttons/button-exit.png"
@@ -528,7 +493,7 @@ u{ text-underline-offset: .18em; }
   </div>
 
   <!-- Script sheet -->
-  <div class="sheet" id="sheet">
+  <div class="sheet" id="sheet" aria-hidden="true">
     <div class="sheetInner">
       <div class="sheetTop">
         <img class="btnImg exitBtn" id="sheetExitBtn"
@@ -546,135 +511,134 @@ u{ text-underline-offset: .18em; }
 
 <script>
 /* =========================================================
-   Quiz (GitHub-friendly, no user CSV upload)
-   - Loads data/questions.csv / data/sets.csv / data/ui_text.csv via fetch()
-   - Supports input typing questions (type = input or q_type_input)
-   - Keeps existing UI and result saving keys
+   Quiz (GitHub Pages)
+   - Fetches CSV from /data
+   - MCQ + typing input questions
+   - Uses your existing UI + assets paths
 ========================================================= */
 
 const FILES = {
-  questions: "data/questions.csv",
   sets: "data/sets.csv",
-  ui: "data/ui_text.csv",
+  questions: "data/questions.csv",
+  ui: "data/ui_text.csv", // optional
 };
 
 const LS = {
   LAST_SET_ID: "JPQ_LAST_SET_ID",
-  LAST_SCORE: "JPQ_LAST_SCORE",
-  LAST_TOTAL: "JPQ_LAST_TOTAL",
-  WRONG_IDS: "JPQ_LAST_WRONG",
+  LAST_SCORE:  "JPQ_LAST_SCORE",
+  LAST_TOTAL:  "JPQ_LAST_TOTAL",
+  WRONG_IDS:   "JPQ_LAST_WRONG",
+  SAVED:       "JPQ_SAVED_QIDS",
 };
 
-const DEFAULT_SET_FALLBACK = ""; // if empty, uses first published set in data/sets.csv
-
-// ===== DOM =====
 const els = {
+  // top
   exitBtn: document.getElementById("exitBtn"),
   exitBar: document.getElementById("exitBar"),
   exitContinue: document.getElementById("exitContinue"),
   exitQuit: document.getElementById("exitQuit"),
 
-  pillProgress: document.getElementById("pillProgress"),
-  pillScore: document.getElementById("pillScore"),
-  pillLevel: document.getElementById("pillLevel"),
+  qCount: document.getElementById("qCount"),
+  scoreBox: document.getElementById("scoreBox"),
 
-  audioBtn: document.getElementById("audioBtn"),
-  promptEn: document.getElementById("promptEn"),
+  uiEn: document.getElementById("uiEn"),
+  uiJa: document.getElementById("uiJa"),
+
+  // instruction
+  playBtn: document.getElementById("playBtn"),
+  pauseBtn: document.getElementById("pauseBtn"),
+  instText: document.getElementById("instText"),
+
+  // prompt
   promptJa: document.getElementById("promptJa"),
+  promptEn: document.getElementById("promptEn"),
+
+  // content
   imgGrid: document.getElementById("imgGrid"),
   choices: document.getElementById("choices"),
 
+  // bottom
   checkBtn: document.getElementById("checkBtn"),
-  bottomRight: document.getElementById("bottomRight"),
+  qaScript: document.getElementById("qaScript"),
+  qaSave: document.getElementById("qaSave"),
+  saveText: document.getElementById("saveText"),
 
+  // overlay
   overlay: document.getElementById("overlay"),
-  panelMsg: document.getElementById("panelMsg"),
-  panelSub: document.getElementById("panelSub"),
+  overlayCloseBtn: document.getElementById("overlayCloseBtn"),
+  resultMsg: document.getElementById("resultMsg"),
   continueBtn: document.getElementById("continueBtn"),
-  retryBtn: document.getElementById("retryBtn"),
+  panelScript: document.getElementById("panelScript"),
+  panelSave: document.getElementById("panelSave"),
+  panelSaveText: document.getElementById("panelSaveText"),
 
-  scriptPanel: document.getElementById("scriptPanel"),
-  toggleScript: document.getElementById("toggleScript"),
+  // sheet
+  sheet: document.getElementById("sheet"),
+  sheetExitBtn: document.getElementById("sheetExitBtn"),
   scriptCols: document.getElementById("scriptCols"),
   scriptJa: document.getElementById("scriptJa"),
   scriptEn: document.getElementById("scriptEn"),
 };
 
-// ===== state =====
-let setId = null;
+const audio = new Audio();
+audio.preload = "auto";
+
+let uiLang = "en"; // "en" | "ja"
+let uiTextMap = {};
+
+let setId = "";
 let setMeta = null;
-let questions = [];
+let qRows = [];
 let idx = 0;
 
 let score = 0;
 let wrongIds = [];
-
 let selectedIndex = null;
 let correctIndexNow = 0;
-
-// typing state
 let typedAnswer = "";
 
-const audio = new Audio();
-audio.preload = "auto";
+let savedQids = new Set();
 
-let uiTextMap = {}; // optional data/ui_text.csv
-
-// =========================================================
-// CSV loader (fetch from GitHub)
-// =========================================================
-
-function stripBOM(s){
-  return s && s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
-}
+// ---------------- CSV helpers ----------------
+function stripBOM(s){ return (s && s.charCodeAt(0) === 0xFEFF) ? s.slice(1) : s; }
 
 function parseCSV(text){
-  // Simple CSV parser with quotes support (enough for your current files)
-  // Returns array of objects using header row keys.
   text = stripBOM(text || "");
   const rows = [];
   let row = [];
   let cur = "";
   let inQ = false;
 
-  for(let i=0;i<text.length;i++){
+  for (let i=0;i<text.length;i++){
     const ch = text[i];
-
-    if(inQ){
-      if(ch === '"'){
+    if (inQ){
+      if (ch === '"'){
         const next = text[i+1];
-        if(next === '"'){ cur += '"'; i++; }
+        if (next === '"'){ cur += '"'; i++; }
         else { inQ = false; }
-      }else{
-        cur += ch;
-      }
+      } else cur += ch;
       continue;
     }
-
-    if(ch === '"'){ inQ = true; continue; }
-    if(ch === ","){ row.push(cur); cur=""; continue; }
-    if(ch === "\n"){
+    if (ch === '"'){ inQ = true; continue; }
+    if (ch === ","){ row.push(cur); cur=""; continue; }
+    if (ch === "\n"){
       row.push(cur); cur="";
-      // ignore empty trailing lines
-      if(row.some(c => (c||"").trim() !== "")) rows.push(row);
-      row = [];
-      continue;
+      if (row.some(c => (c||"").trim() !== "")) rows.push(row);
+      row=[]; continue;
     }
-    if(ch === "\r"){ continue; }
+    if (ch === "\r") continue;
     cur += ch;
   }
-  // last row
-  if(cur.length || row.length){
+  if (cur.length || row.length){
     row.push(cur);
-    if(row.some(c => (c||"").trim() !== "")) rows.push(row);
+    if (row.some(c => (c||"").trim() !== "")) rows.push(row);
   }
-  if(rows.length === 0) return [];
-
+  if (!rows.length) return [];
   const header = rows[0].map(h => (h||"").trim());
   const out = [];
-  for(let r=1;r<rows.length;r++){
+  for (let r=1;r<rows.length;r++){
     const obj = {};
-    for(let c=0;c<header.length;c++){
+    for (let c=0;c<header.length;c++){
       obj[header[c]] = (rows[r][c] ?? "").trim();
     }
     out.push(obj);
@@ -683,348 +647,362 @@ function parseCSV(text){
 }
 
 async function fetchCSV(path){
-  const res = await fetch(path, { cache: "no-store" });
-  if(!res.ok){
-    throw new Error(`Failed to fetch ${path} (${res.status})`);
-  }
-  const txt = await res.text();
-  return parseCSV(txt);
+  const res = await fetch(path, { cache:"no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch ${path} (${res.status})`);
+  return parseCSV(await res.text());
 }
 
-// =========================================================
-// UI text helper
-// =========================================================
 function buildUiTextMap(rows){
   const map = {};
-  for(const r of rows){
+  for (const r of rows){
     const k = (r.key || r.id || "").trim();
-    if(!k) continue;
-    map[k] = r.value || r.text || "";
+    if (!k) continue;
+    map[k] = (r.value || r.text || "").trim();
   }
   return map;
 }
+
 function t(key, fallback){
   return (uiTextMap && uiTextMap[key]) ? uiTextMap[key] : fallback;
 }
 
-// =========================================================
-// Markup helpers (already used in your CSV)
-// =========================================================
+// ---------------- mini-markup ----------------
 function escapeHTML(s){
   return (s||"").replace(/[&<>"']/g, m => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[m]));
 }
 
-// Minimal markup: [b] [i] [u] [hl] [small] [big] [ruby]word[rt]reading[/rt][/ruby]
 function miniMarkupToHTML(s){
   s = s || "";
+
   // ruby: [ruby]漢字[rt]かんじ[/rt][/ruby]
-  // your CSV uses [ruby]... [rt]...[/rt][/ruby]
-  s = s.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g, (m, a, b)=>{
-    return `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`;
-  });
-  s = s.replace(/\[b\]([\s\S]*?)\[\/b\]/g, "<b>$1</b>");
-  s = s.replace(/\[i\]([\s\S]*?)\[\/i\]/g, "<i>$1</i>");
-  s = s.replace(/\[u\]([\s\S]*?)\[\/u\]/g, "<u>$1</u>");
-  s = s.replace(/\[hl\]([\s\S]*?)\[\/hl\]/g, `<span class="hl">$1</span>`);
-  s = s.replace(/\[small\]([\s\S]*?)\[\/small\]/g, `<span class="small">$1</span>`);
-  s = s.replace(/\[big\]([\s\S]*?)\[\/big\]/g, `<span class="big">$1</span>`);
+  s = s.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g,
+    (_, a, b)=> `<ruby>${escapeHTML(a)}<rt>${escapeHTML(b)}</rt></ruby>`);
+
+  s = s.replace(/\[b\]([\s\S]*?)\[\/b\]/g, `<span class="mk-b">$1</span>`);
+  s = s.replace(/\[i\]([\s\S]*?)\[\/i\]/g, `<span class="mk-i">$1</span>`);
+  s = s.replace(/\[u\]([\s\S]*?)\[\/u\]/g, `<span class="mk-u">$1</span>`);
+  s = s.replace(/\[hl\]([\s\S]*?)\[\/hl\]/g, `<span class="mk-hl">$1</span>`);
+  s = s.replace(/\[small\]([\s\S]*?)\[\/small\]/g, `<span class="mk-small">$1</span>`);
+  s = s.replace(/\[big\]([\s\S]*?)\[\/big\]/g, `<span class="mk-big">$1</span>`);
+
   return s;
 }
 
-// =========================================================
-// Shuffle helper
-// =========================================================
+// ---------------- question type ----------------
+function isInputQuestion(q){
+  const raw = String((q.type || q.q_type || "")).trim().toLowerCase();
+  return raw === "input" || raw === "typing" || raw === "q_type_input" || raw === "type_input";
+}
+
 function shuffle(arr){
   const a = arr.slice();
-  for(let i=a.length-1;i>0;i--){
+  for (let i=a.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
     [a[i],a[j]] = [a[j],a[i]];
   }
   return a;
 }
 
-// =========================================================
-// Typing question helpers
-// =========================================================
-function isInputQuestion(q){
-  const raw = String((q.type || q.q_type || "")).trim().toLowerCase();
-  return raw === "input" || raw === "q_type_input" || raw === "typing" || raw === "type_input";
-}
-
+// typing comparison
 function kataToHira(str){
-  return (str || "").replace(/[\u30A1-\u30F6]/g, ch =>
+  return (str||"").replace(/[\u30A1-\u30F6]/g, ch =>
     String.fromCharCode(ch.charCodeAt(0) - 0x60)
   );
 }
-function normalizeKana(str){
-  return kataToHira((str||"").trim());
-}
+function normalizeKana(str){ return kataToHira((str||"").trim()); }
 function normalizeRomaji(str){
   let out = (str||"").trim().toLowerCase().replace(/\s+/g,"").replace(/'/g,"");
-  // macron -> double vowels
   out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
-  // handle combining macron just in case
   out = out.replace(/ā/g,"aa").replace(/ī/g,"ii").replace(/ū/g,"uu").replace(/ē/g,"ee").replace(/ō/g,"oo");
   return out;
 }
-function isKanaLike(str){
-  return /[\u3040-\u30FF]/.test(str || "");
-}
-function acceptPartial(user, target){
-  if(!user || user.length < 2) return false;
-  return target.includes(user);
-}
+function isKanaLike(str){ return /[\u3040-\u30FF]/.test(str||""); }
+function acceptPartial(u, t){ return u && u.length>=2 && (t||"").includes(u); }
 
 function extractBracketAnswer(promptJa){
-  // If your prompt uses: ... [もとに] ...
   const m = String(promptJa||"").match(/\[([^\]]+)\]/);
   return m ? m[1].trim() : "";
 }
-
 function getAcceptedAnswers(q){
-  // Preferred: answer_text column (pipe separated)
   const raw = (q.answer_text || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if(raw.length) return raw;
-
-  // Fallback: bracketed answer in prompt_ja
+  if (raw.length) return raw;
   const br = extractBracketAnswer(q.prompt_ja);
-  if(br) return [br];
-
+  if (br) return [br];
   return [];
 }
-
 function checkTyped(q, userRaw){
-  const accepted = getAcceptedAnswers(q);
-  if(!accepted.length) return false;
+  const acc = getAcceptedAnswers(q);
+  if (!acc.length) return false;
 
-  const uRaw = (userRaw || "").trim();
-  if(!uRaw) return false;
+  const uRaw = (userRaw||"").trim();
+  if (!uRaw) return false;
 
-  // If user typed kana, normalize kana both sides
-  if(isKanaLike(uRaw)){
+  if (isKanaLike(uRaw)){
     const u = normalizeKana(uRaw);
-    const targets = accepted.map(a => normalizeKana(a));
-    return targets.some(t => u === t || acceptPartial(u, t));
-  }else{
+    const targets = acc.map(a => normalizeKana(a));
+    return targets.some(tg => u === tg || acceptPartial(u, tg));
+  } else {
     const u = normalizeRomaji(uRaw);
-    const targets = accepted.map(a => normalizeRomaji(a));
-    return targets.some(t => u === t || acceptPartial(u, t));
+    const targets = acc.map(a => normalizeRomaji(a));
+    return targets.some(tg => u === tg || acceptPartial(u, tg));
   }
 }
 
-// =========================================================
-// Rendering
-// =========================================================
-function render(){
-  const q = questions[idx];
-
-  // progress + score
-  els.pillProgress.textContent = `${idx+1} / ${questions.length}`;
-  els.pillScore.textContent = `Score: ${score}`;
-
-  // level pill
-  const lvl = (setMeta?.level_jlpt || setMeta?.level_cefr || "").trim();
-  els.pillLevel.textContent = lvl ? lvl : "—";
-
-  // prompts
-  els.promptEn.textContent = q.prompt_en || "";
-  els.promptJa.innerHTML = miniMarkupToHTML(q.prompt_ja || "");
-
-  // audio
-  if(q.audio_file){
-    audio.src = q.audio_file;
-    els.audioBtn.style.opacity = "1";
-    els.audioBtn.style.pointerEvents = "auto";
-  }else{
-    audio.src = "";
-    els.audioBtn.style.opacity = ".35";
-    els.audioBtn.style.pointerEvents = "none";
-  }
-
-  // images
-  renderImages(q);
-
-  // choices / typing
-  renderChoicesOrTyping(q);
-
-  // scripts
-  renderScripts(q);
+// ---------------- UI state helpers ----------------
+function getParam(name){
+  const url = new URL(location.href);
+  return url.searchParams.get(name);
 }
 
+function loadSavedSet(){
+  try{
+    const raw = localStorage.getItem(LS.SAVED);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  }catch{
+    return new Set();
+  }
+}
+function persistSavedSet(){
+  localStorage.setItem(LS.SAVED, JSON.stringify([...savedQids]));
+}
+
+function setUiLang(lang){
+  uiLang = lang;
+  els.uiEn.classList.toggle("on", uiLang==="en");
+  els.uiJa.classList.toggle("on", uiLang==="ja");
+
+  // instruction label example (you can map via ui_text later)
+  if (uiLang === "ja"){
+    els.instText.textContent = t("inst_listen_ja", "Listen (kiki mashō)");
+  } else {
+    els.instText.textContent = t("inst_listen_en", "Listen (kiki mashō)");
+  }
+}
+
+// ---------------- render ----------------
 function renderImages(q){
   els.imgGrid.innerHTML = "";
   const imgs = (q.image_files || "").split("|").map(s=>s.trim()).filter(Boolean);
-  if(!imgs.length){
+  if (!imgs.length){
     els.imgGrid.style.display = "none";
     return;
   }
   els.imgGrid.style.display = "";
   imgs.forEach(src=>{
+    const card = document.createElement("div");
+    card.className = "imgCard";
     const img = document.createElement("img");
-    img.className = "qimg";
     img.src = src;
     img.alt = "";
-    els.imgGrid.appendChild(img);
+    card.appendChild(img);
+    els.imgGrid.appendChild(card);
   });
 }
 
-function renderScripts(q){
+function renderScript(q){
   const ja = (q.script_ja || "").trim();
   const en = (q.script_en || "").trim();
-
-  // Show panel only if there's any script content
-  if(!ja && !en){
-    els.scriptPanel.style.display = "none";
-    return;
-  }
-  els.scriptPanel.style.display = "";
-
   els.scriptJa.innerHTML = miniMarkupToHTML(ja || "");
   els.scriptEn.innerHTML = miniMarkupToHTML(en || "");
+
+  // if no English script, still show JA column only
+  if (ja && !en){
+    els.scriptCols.style.gridTemplateColumns = "1fr";
+    els.scriptEn.style.display = "none";
+  } else {
+    els.scriptCols.style.gridTemplateColumns = "";
+    els.scriptEn.style.display = "";
+  }
 }
 
-// ---- choices or typing ----
-function renderChoicesOrTyping(q){
-  // reset
+function renderChoices(q){
+  els.choices.innerHTML = "";
+  els.choices.classList.remove("twoCol");
   selectedIndex = null;
-  typedAnswer = "";
+  correctIndexNow = 0;
 
-  if(isInputQuestion(q)){
-    renderTyping(q);
-    return;
+  const rawParts = (q.choices_text || "").split("|").map(v=>v.trim()).filter(Boolean);
+  const pairs = rawParts.map((text, origIdx)=>({ text, origIdx }));
+
+  const qt = String((q.type || q.q_type || "")).trim().toLowerCase();
+  const noShuffle = (qt === "q_type_1_listen_only");
+  const shown = noShuffle ? pairs : shuffle(pairs);
+
+  // answer_index supports 0-based OR 1-based
+  let correctOrig = parseInt(q.answer_index || "0", 10);
+  if (!Number.isFinite(correctOrig)) correctOrig = 0;
+  if (correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
+    correctOrig = correctOrig - 1;
   }
-  renderMCQ(q);
+  correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
+  if (correctIndexNow < 0) correctIndexNow = 0;
+
+  const long = shown.some(p => (p.text || "").length > 22);
+  els.choices.classList.toggle("twoCol", !long);
+
+  shown.forEach((p, i)=>{
+    const b = document.createElement("button");
+    b.className = "choiceBtn";
+    b.innerHTML = miniMarkupToHTML(p.text);
+    b.addEventListener("click", ()=>{
+      selectedIndex = i;
+      [...els.choices.querySelectorAll(".choiceBtn")].forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+    });
+    els.choices.appendChild(b);
+  });
 }
 
 function renderTyping(q){
-  const wrap = els.choices;
-  wrap.classList.remove("twoCol");
-  wrap.innerHTML = "";
+  els.choices.innerHTML = "";
+  els.choices.classList.remove("twoCol");
+  typedAnswer = "";
 
-  const box = document.createElement("div");
-  box.style.display = "grid";
-  box.style.gap = "10px";
+  const wrap = document.createElement("div");
+  wrap.className = "typeWrap";
 
   const input = document.createElement("input");
+  input.className = "typeInput";
   input.type = "text";
-  input.id = "typeAnswer";
   input.autocomplete = "off";
   input.autocapitalize = "none";
   input.spellcheck = false;
-  input.placeholder = "Type here (かな / カナ / romaji)";
-  input.style.width = "100%";
-  input.style.boxSizing = "border-box";
-  input.style.padding = "14px 14px";
-  input.style.borderRadius = "14px";
-  input.style.border = "1px solid rgba(255,255,255,.18)";
-  input.style.background = "rgba(255,255,255,.06)";
-  input.style.color = "white";
-  input.style.fontSize = "16px";
-  input.style.outline = "none";
+  input.placeholder = (uiLang==="ja")
+    ? t("type_placeholder_ja", "ここに入力（かな / カナ / romaji）")
+    : t("type_placeholder_en", "Type here (かな / カナ / romaji)");
 
   const hint = document.createElement("div");
-  hint.style.fontSize = "12px";
-  hint.style.color = "rgba(255,255,255,.62)";
+  hint.className = "typeHint";
+  hint.textContent = (uiLang==="ja")
+    ? t("type_hint_ja", "かな/ローマ字OK。部分一致OK（2文字以上）")
+    : t("type_hint_en", "Kana or romaji OK. Partial OK (min 2 chars).");
 
-  const acc = getAcceptedAnswers(q);
-  const hasMacronExample = acc.some(a => /[āīūēō]/.test(a));
-  hint.innerHTML = `Kana or romaji OK. ${hasMacronExample ? "Macron OK (ōkī)." : "Romaji OK (ookii)."} Partial OK (min 2 chars).`;
-
-  input.addEventListener("input", ()=>{ typedAnswer = input.value; });
+  input.addEventListener("input", ()=> typedAnswer = input.value);
   input.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter"){
+    if (e.key === "Enter"){
       e.preventDefault();
       els.checkBtn.click();
     }
   });
 
-  box.appendChild(input);
-  box.appendChild(hint);
-  wrap.appendChild(box);
+  wrap.appendChild(input);
+  wrap.appendChild(hint);
+  els.choices.appendChild(wrap);
 
   setTimeout(()=>input.focus(), 60);
 }
 
-function renderMCQ(q){
-  const wrap = els.choices;
-  wrap.innerHTML = "";
-
-  const rawParts = (q.choices_text || "").split("|").map(v => v.trim()).filter(Boolean);
-  const pairs = rawParts.map((text, origIdx) => ({ text, origIdx }));
-
-  // Shuffle unless it's q_type_1_listen_only (your "type 1")
-  const qt = String((q.type || q.q_type || "")).trim().toLowerCase();
-  const noShuffle = (qt === "q_type_1_listen_only");
-
-  const shown = noShuffle ? pairs : shuffle(pairs);
-
-  // Answer index: support 0-based and 1-based
-  let correctOrig = parseInt(q.answer_index || "0", 10);
-  if(!Number.isFinite(correctOrig)) correctOrig = 0;
-  // if looks 1-based (>=1) and within range -> convert to 0-based
-  if(correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
-    correctOrig = correctOrig - 1;
-  }
-  correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
-  if(correctIndexNow < 0) correctIndexNow = 0;
-
-  const long = shown.some(p => (p.text || "").length > 22);
-  wrap.classList.toggle("twoCol", !long);
-
-  shown.forEach((p, i) => {
-    const b = document.createElement("button");
-    b.className = "choiceBtn";
-    b.innerHTML = miniMarkupToHTML(p.text);
-    b.addEventListener("click", () => {
-      selectedIndex = i;
-      [...wrap.children].forEach(el => el.classList.remove("active"));
-      b.classList.add("active");
-    });
-    wrap.appendChild(b);
-  });
+function updateSavedUI(qid){
+  const on = savedQids.has(qid);
+  els.qaSave.classList.toggle("on", on);
+  els.panelSave.classList.toggle("on", on);
+  els.saveText.textContent = on ? "Saved" : "Save";
+  els.panelSaveText.textContent = on ? "Saved" : "Save";
 }
 
-// =========================================================
-// Overlay feedback
-// =========================================================
-function showOverlay(ok, msg, sub){
-  els.panelMsg.textContent = msg;
-  els.panelSub.textContent = sub || "";
-  els.overlay.classList.add("show");
+function render(){
+  const q = qRows[idx];
 
-  // visual hint: which is "primary"
-  els.continueBtn.style.opacity = ok ? "1" : ".65";
-  els.retryBtn.style.opacity = ok ? ".65" : "1";
+  // pills
+  els.qCount.textContent = `Q: ${idx+1}/${qRows.length}`;
+  els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
+
+  // prompts
+  const pJa = q.prompt_ja || "";
+  const pEn = q.prompt_en || "";
+  els.promptJa.innerHTML = miniMarkupToHTML(pJa);
+  els.promptEn.textContent = pEn;
+
+  // audio
+  if (q.audio_file){
+    audio.src = q.audio_file;
+    els.playBtn.style.opacity = "1";
+    els.playBtn.style.pointerEvents = "auto";
+  }else{
+    audio.removeAttribute("src");
+    els.playBtn.style.opacity = ".35";
+    els.playBtn.style.pointerEvents = "none";
+    els.pauseBtn.style.display = "none";
+    els.playBtn.style.display = "";
+  }
+
+  // images
+  renderImages(q);
+
+  // script
+  renderScript(q);
+
+  // choices / typing
+  if (isInputQuestion(q)) renderTyping(q);
+  else renderChoices(q);
+
+  // saved state
+  const qid = (q.question_id || `${idx}`);
+  updateSavedUI(qid);
+
+  // close any sheets/overlays
+  hideOverlay();
+  hideSheet();
+}
+
+// ---------------- overlay / sheet ----------------
+function showOverlay(ok){
+  // choose message image (you can customize)
+  // if you have 2 images, replace here:
+  // ok => message-result-correct.png, else => message-result-try_again.png
+  // For now, keep your pin message always.
+  els.overlay.classList.add("show");
+  els.overlay.setAttribute("aria-hidden", "false");
 }
 function hideOverlay(){
   els.overlay.classList.remove("show");
+  els.overlay.setAttribute("aria-hidden", "true");
 }
 
-// =========================================================
-// Flow
-// =========================================================
-function playAudio(){
-  if(!audio.src) return;
-  audio.currentTime = 0;
-  audio.play().catch(()=>{});
+function showSheet(){
+  els.sheet.classList.add("show");
+  els.sheet.setAttribute("aria-hidden", "false");
 }
+function hideSheet(){
+  els.sheet.classList.remove("show");
+  els.sheet.setAttribute("aria-hidden", "true");
+}
+
+// ---------------- flow ----------------
+function playAudio(){
+  if (!audio.src) return;
+  audio.currentTime = 0;
+  audio.play().then(()=>{
+    els.playBtn.style.display = "none";
+    els.pauseBtn.style.display = "";
+  }).catch(()=>{});
+}
+function pauseAudio(){
+  audio.pause();
+  els.pauseBtn.style.display = "none";
+  els.playBtn.style.display = "";
+}
+audio.addEventListener("ended", ()=>{
+  els.pauseBtn.style.display = "none";
+  els.playBtn.style.display = "";
+});
 
 function finish(){
   localStorage.setItem(LS.LAST_SET_ID, setId);
-  localStorage.setItem(LS.LAST_TOTAL, String(questions.length));
-  const pct = Math.round((score / questions.length) * 100);
+  localStorage.setItem(LS.LAST_TOTAL, String(qRows.length));
+  const pct = Math.round((score / qRows.length) * 100);
   localStorage.setItem(LS.LAST_SCORE, String(pct));
   localStorage.setItem(LS.WRONG_IDS, JSON.stringify(wrongIds));
-
   location.href = "result.html";
 }
 
 function next(){
-  hideOverlay();
   idx += 1;
-  if(idx >= questions.length){
+  if (idx >= qRows.length){
     finish();
     return;
   }
@@ -1032,128 +1010,123 @@ function next(){
   playAudio();
 }
 
-function retry(){
-  hideOverlay();
-  // for typing, re-focus
-  const inp = document.getElementById("typeAnswer");
-  if(inp) inp.focus();
-  playAudio();
-}
-
-// =========================================================
-// Event wiring
-// =========================================================
-els.audioBtn.addEventListener("click", playAudio);
+// ---------------- events ----------------
+els.playBtn.addEventListener("click", playAudio);
+els.pauseBtn.addEventListener("click", pauseAudio);
 
 els.checkBtn.addEventListener("click", ()=>{
-  const q = questions[idx];
-
+  const q = qRows[idx];
   let ok = false;
-  if(isInputQuestion(q)){
+
+  if (isInputQuestion(q)){
     ok = checkTyped(q, typedAnswer);
-  }else{
+  } else {
     ok = (selectedIndex !== null) && (selectedIndex === correctIndexNow);
   }
 
-  if(ok){
+  if (ok){
     score += 1;
-    showOverlay(true, "Correct ✅", "Nice! Continue.");
-  }else{
+    // keep your overlay image; if you want change image based on ok, do it here
+  } else {
     wrongIds.push(q.question_id || String(idx));
-    showOverlay(false, "Almost 💡", "Try again, or Continue to move on.");
   }
 
-  // update score pill immediately
-  els.pillScore.textContent = `Score: ${score}`;
+  // update pill immediately
+  els.scoreBox.textContent = `Score: ${score}/${qRows.length}`;
+
+  showOverlay(ok);
 });
 
-els.continueBtn.addEventListener("click", next);
-els.retryBtn.addEventListener("click", retry);
+els.continueBtn.addEventListener("click", ()=>{
+  hideOverlay();
+  next();
+});
+els.overlayCloseBtn.addEventListener("click", hideOverlay);
 
 // Exit confirm
 els.exitBtn.addEventListener("click", ()=> els.exitBar.classList.add("show"));
 els.exitContinue.addEventListener("click", ()=> els.exitBar.classList.remove("show"));
 els.exitQuit.addEventListener("click", ()=> location.href = "menu.html");
 
-// Script toggle glow
-els.toggleScript.addEventListener("click", ()=>{
-  const expanded = els.scriptPanel.classList.toggle("expanded");
-  if(expanded){
-    els.toggleScript.classList.add("glow");
-  }else{
-    els.toggleScript.classList.remove("glow");
-  }
-});
+// Script sheet
+els.qaScript.addEventListener("click", showSheet);
+els.panelScript.addEventListener("click", ()=>{ hideOverlay(); showSheet(); });
+els.sheetExitBtn.addEventListener("click", hideSheet);
 
-// =========================================================
-// Boot: choose setId and load CSV
-// =========================================================
-function getParam(name){
-  const url = new URL(location.href);
-  return url.searchParams.get(name);
+// Save toggle
+function toggleSaveCurrent(){
+  const q = qRows[idx];
+  const qid = (q.question_id || `${idx}`);
+  if (savedQids.has(qid)) savedQids.delete(qid);
+  else savedQids.add(qid);
+  persistSavedSet();
+  updateSavedUI(qid);
 }
+els.qaSave.addEventListener("click", toggleSaveCurrent);
+els.panelSave.addEventListener("click", toggleSaveCurrent);
 
+// UI toggle
+els.uiEn.addEventListener("click", ()=>{ setUiLang("en"); render(); });
+els.uiJa.addEventListener("click", ()=>{ setUiLang("ja"); render(); });
+
+// ---------------- boot ----------------
 async function boot(){
   try{
-    const [setsRows, qRows] = await Promise.all([
+    savedQids = loadSavedSet();
+
+    const [setsRows, questionsRows] = await Promise.all([
       fetchCSV(FILES.sets),
       fetchCSV(FILES.questions),
     ]);
 
-    // ui_text is optional
+    // optional ui_text.csv
     try{
       const uiRows = await fetchCSV(FILES.ui);
       uiTextMap = buildUiTextMap(uiRows);
-    }catch(_e){
+    }catch{
       uiTextMap = {};
     }
 
+    // choose set_id
     const requested = getParam("set") || getParam("set_id");
     const last = localStorage.getItem(LS.LAST_SET_ID) || "";
-    const fallback = DEFAULT_SET_FALLBACK || last || requested || "";
-
-    // Choose set:
-    // 1) URL param if present
-    // 2) last played
-    // 3) first published
     const published = setsRows.filter(s => String(s.is_published||"").trim() === "1");
     const firstPublished = published[0]?.set_id || setsRows[0]?.set_id || "";
 
-    setId = requested || last || fallback || firstPublished || "";
-    if(!setId){
-      alert("No set_id found. Please add data/sets.csv and data/questions.csv to the repo.");
+    setId = requested || last || firstPublished || "";
+    if (!setId){
+      alert("No set_id found. Please add data/sets.csv");
       location.href = "menu.html";
       return;
     }
 
     setMeta = setsRows.find(s => s.set_id === setId) || null;
 
-    // Filter questions for this set
-    questions = qRows.filter(q => q.set_id === setId);
+    // filter questions by set_id
+    qRows = questionsRows.filter(q => q.set_id === setId);
 
-    // If you want exactly 10 questions: choose the first 10 (or shuffle then take 10)
-    // For typing practice you said "10 questions each set".
-    // We'll take first 10 in file order.
-    if(questions.length > 10) questions = questions.slice(0, 10);
+    // optional: limit to 10
+    if (qRows.length > 10) qRows = qRows.slice(0, 10);
 
-    if(questions.length === 0){
+    if (!qRows.length){
       alert(`No questions found for set_id: ${setId}`);
       location.href = "menu.html";
       return;
     }
 
-    // Reset
+    // init UI language
+    setUiLang("en");
+
+    // init state
     idx = 0;
     score = 0;
     wrongIds = [];
 
-    // Render first
     render();
     playAudio();
-
   }catch(e){
     console.error(e);
-    alert("Could not load CSV from GitHub. Make sure data/questions.csv and data/sets.csv are in the same folder as quiz.html.");
+    alert("Could not load CSV from GitHub Pages. Put CSV into /data and check filenames.");
     location.href = "menu.html";
   }
 }
