@@ -10,8 +10,7 @@
       --fg:#fff;
       --muted:rgba(255,255,255,.65);
       --lime:#C8FF2E;
-
-      --panel-bg: #162c40;          /* solid = crisp */
+      --panel-bg: #162c40;
       --panel-border: rgba(255,255,255,.18);
       --darkbar: rgba(45,45,45,.92);
     }
@@ -97,27 +96,17 @@
       line-height:1.4;
     }
 
-    /* ===== prompt sizes ===== */
+    /* ===== prompt ===== */
     .promptBox{ margin:10px 0 12px; }
-
     .promptJa{
-      font-size:27px;      /* main +20% */
+      font-size:27px;
       line-height:1.45;
       margin:0 0 6px;
       font-weight:450;
     }
     .promptJa ruby{ ruby-position: over; }
-    .promptJa rt{
-      font-size:0.80em;    /* ruby ~+50% clearer */
-      opacity:0.92;
-      letter-spacing:0.02em;
-    }
-    .promptEn{
-      font-size:14px;
-      line-height:1.5;
-      margin:0;
-      color:rgba(255,255,255,.82);
-    }
+    .promptJa rt{ font-size:0.80em; opacity:0.92; letter-spacing:0.02em; }
+    .promptEn{ font-size:14px; line-height:1.5; margin:0; color:rgba(255,255,255,.82); }
 
     /* ===== images ===== */
     .grid{
@@ -132,16 +121,11 @@
       background:rgba(255,255,255,.04);
       overflow:hidden;
     }
-    .imgCard img{
-      width:100%;
-      height:auto;
-      display:block;
-    }
+    .imgCard img{ width:100%; height:auto; display:block; }
 
-    /* ===== choices ===== */
+    /* ===== MCQ choices ===== */
     .choices{ margin-top:6px; display:grid; gap:10px; }
     .choices.twoCol{ grid-template-columns: 1fr 1fr; }
-
     .choiceBtn{
       text-align:left;
       padding:12px 14px;
@@ -162,6 +146,104 @@
       font-weight:900;
     }
 
+    /* ===== TYPE 6: Text input ===== */
+    #inputArea{ margin-top:10px; display:none; }
+    #inputArea.show{ display:block; }
+    .inputField{
+      width:100%;
+      box-sizing:border-box;
+      background:rgba(255,255,255,.07);
+      border:2px solid rgba(255,255,255,.22);
+      border-radius:16px;
+      color:#fff;
+      font-size:26px;
+      font-family:inherit;
+      padding:14px 18px;
+      outline:none;
+      transition:border-color .15s ease;
+      -webkit-appearance:none;
+    }
+    .inputField:focus{ border-color:var(--lime); }
+    .inputHint{ margin-top:8px; font-size:13px; opacity:.5; line-height:1.4; }
+
+    /* ===== TYPE 4/5: Reorder ===== */
+    #reorderArea{ margin-top:10px; display:none; }
+    #reorderArea.show{ display:block; }
+    .reorderLabel{ font-size:12px; opacity:.45; margin-bottom:6px; text-transform:uppercase; letter-spacing:.06em; }
+    .reorderAnswer{
+      min-height:60px;
+      border:2px dashed rgba(255,255,255,.25);
+      border-radius:16px;
+      padding:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:16px;
+      background:rgba(255,255,255,.03);
+      transition: border-color .15s, background .15s;
+    }
+    .reorderAnswer.dragOver{
+      border-color:var(--lime);
+      background:rgba(200,255,46,.06);
+    }
+    .reorderBank{ display:flex; flex-wrap:wrap; gap:8px; }
+    .reorderChip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 16px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.22);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      font-size:16px;
+      font-weight:600;
+      cursor:pointer;
+      user-select:none;
+      transition: background .12s, border-color .12s, color .12s, opacity .12s;
+      touch-action:none;
+    }
+    .reorderChip:active{ opacity:.75; }
+    .reorderChip.inAnswer{
+      background:rgba(200,255,46,.15);
+      border-color:var(--lime);
+      color:var(--lime);
+    }
+    .reorderChip img{ height:52px; width:auto; border-radius:8px; display:block; pointer-events:none; }
+
+    /* ===== TYPE 8: Matching ===== */
+    #matchArea{ margin-top:10px; display:none; }
+    #matchArea.show{ display:block; }
+    .matchGrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .matchCol{ display:flex; flex-direction:column; gap:8px; }
+    .matchChip{
+      padding:12px 14px;
+      border-radius:14px;
+      border:2px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);
+      color:#fff;
+      font-size:16px;
+      font-weight:600;
+      cursor:pointer;
+      user-select:none;
+      text-align:center;
+      line-height:1.35;
+      transition: background .12s, border-color .12s, color .12s;
+    }
+    .matchChip.selected{ border-color:var(--lime); background:rgba(200,255,46,.15); color:var(--lime); }
+    .matchChip.matchedCorrect{
+      border-color:rgba(120,220,120,.7);
+      background:rgba(60,140,60,.25);
+      color:#afffaf;
+      cursor:default; pointer-events:none;
+    }
+    .matchChip.matchedWrong{
+      border-color:rgba(255,120,120,.7);
+      background:rgba(140,40,40,.3);
+      color:#ffaaaa;
+    }
+    .matchStatus{ margin-top:10px; font-size:14px; opacity:.6; min-height:20px; }
+
     /* ===== bottom bar ===== */
     .bottomBar{
       position:fixed;
@@ -179,187 +261,134 @@
       gap:12px;
       pointer-events:none;
     }
-
-    /* check button +20% */
     .checkBtn{ width:216px; pointer-events:auto; }
-
-    .rightActions{
-      display:flex;
-      gap:10px;
-      align-items:flex-end;
-      pointer-events:auto;
-
-    }
+    .rightActions{ display:flex; gap:10px; align-items:flex-end; pointer-events:auto; }
     .qa{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:10px 12px;
-      border-radius:999px;
+      display:flex; align-items:center; gap:8px;
+      padding:10px 12px; border-radius:999px;
       border:1px solid rgba(255,255,255,.18);
       background:rgba(0,0,0,.55);
-      cursor:pointer;
-      user-select:none;
-      font-size:15px;
-      color:var(--fg);
-      white-space:nowrap;
+      cursor:pointer; user-select:none;
+      font-size:15px; color:var(--fg); white-space:nowrap;
     }
     .qa.save{ opacity:.35; }
     .qa.save.on{ opacity:1; }
     .qa .sub{ font-size:12px; color:var(--muted); }
+    .qa.disabled{ opacity:.28; pointer-events:none; filter:grayscale(1); }
 
-    .qa.disabled{
-      opacity:.28;
-      pointer-events:none;
-      filter: grayscale(1);
-    }
-
-    /* ===== Exit confirm bar (FIXED: smaller + side-by-side) ===== */
+    /* ===== Exit confirm bar ===== */
     .exitBar{
-      position:fixed;
-      left:0; right:0;
-      top:0;
-      z-index:80;
-      display:flex;
-      justify-content:center;
+      position:fixed; left:0; right:0; top:0;
+      z-index:80; display:flex; justify-content:center;
       pointer-events:none;
       transform: translateY(-120%);
       transition: transform .18s ease;
     }
     .exitBar.show{ transform: translateY(0); }
-
     .exitBarInner{
       width:min(980px, calc(100% - 28px));
       background:var(--darkbar);
       border:1px solid rgba(255,255,255,.16);
-      border-radius:18px;
-      margin-top:10px;
-      padding:12px;
-      display:flex;
-      flex-direction:row;          /* side-by-side */
-      justify-content: space-between;
-      align-items:center;
-      gap:14px;
-      flex-wrap:wrap;              /* small window => stack */
-      pointer-events:auto;
+      border-radius:18px; margin-top:10px; padding:12px;
+      display:flex; flex-direction:row;
+      justify-content:space-between; align-items:center;
+      gap:14px; flex-wrap:wrap; pointer-events:auto;
     }
-    .exitBtnImg{
-      width:min(140px, 30vw);      /* smaller */
-      max-width:260px;
-    }
+    .exitBtnImg{ width:min(140px, 30vw); max-width:260px; }
 
-    /* ===== Result overlay (CRISP) ===== */
+    /* ===== Result overlay ===== */
     .overlay{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:flex-start;
-      justify-content:center;
-      padding-top:36px;
-      z-index:60;
+      position:fixed; inset:0; display:none;
+      align-items:flex-start; justify-content:center;
+      padding-top:36px; z-index:60;
     }
     .overlay.show{ display:flex; }
-
     .panel{
       width:min(980px, calc(100% - 28px));
-      border-radius:18px;
-      border:1px solid var(--panel-border);
-      background:var(--panel-bg);
-      padding:16px;
-      box-shadow: 0 18px 60px rgba(0,0,0,.55);
-      transform: translateY(-16px);
-      opacity: 0;
+      border-radius:18px; border:1px solid var(--panel-border);
+      background:var(--panel-bg); padding:16px;
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      transform:translateY(-16px); opacity:0;
       transition: transform .18s ease, opacity .18s ease;
     }
-    .overlay.show .panel{
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .panelTop{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-    }
-
-    .resultMsg{
-      width:min(520px, 82vw);
-      height:auto;
-      display:block;
-      margin:10px 0 14px;
-    }
-
+    .overlay.show .panel{ transform:translateY(0); opacity:1; }
+    .panelTop{ display:flex; justify-content:space-between; align-items:flex-start; }
+    .resultMsg{ width:min(520px, 82vw); height:auto; display:block; margin:10px 0 14px; }
     @keyframes popIn {
-      0%   { transform: scale(.92); opacity: .0; }
-      60%  { transform: scale(1.03); opacity: 1; }
-      100% { transform: scale(1); }
+      0%   { transform:scale(.92); opacity:.0; }
+      60%  { transform:scale(1.03); opacity:1; }
+      100% { transform:scale(1); }
     }
-    .overlay.show .resultMsg{
-      animation: popIn .22s ease both;
+    .overlay.show .resultMsg{ animation:popIn .22s ease both; }
+
+    /* Correct answer display */
+    .correctAnswerBox{
+      margin:6px 0 14px; padding:12px 16px;
+      border-radius:14px;
+      background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.14);
+      font-size:15px; line-height:1.6; display:none;
     }
+    .correctAnswerBox.show{ display:block; }
+    .correctAnswerBox .label{ font-size:12px; opacity:.55; margin-bottom:4px; }
 
     .panelBtns{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap:12px;
-      flex-wrap:wrap;
+      display:flex; justify-content:space-between;
+      align-items:flex-end; gap:12px; flex-wrap:wrap;
     }
     .continueBtn{ width:220px; }
-
-    .panelMini{
-      display:flex;
-      gap:18px;
-      align-items:center;
-      font-size:18px;
-    }
-    .panelMini .saved{
-      opacity:.35;
-      cursor:pointer;
-      user-select:none;
-    }
+    .panelMini{ display:flex; gap:18px; align-items:center; font-size:18px; }
+    .panelMini .saved{ opacity:.35; cursor:pointer; user-select:none; }
     .panelMini .saved.on{ opacity:1; }
 
-    /* ===== Script bottom sheet ===== */
+    /* ===== Script sheet ===== */
     .sheet{
-      position:fixed;
-      left:0; right:0;
-      bottom:-110%;
-      background: rgba(40, 80, 50, .72);
+      position:fixed; left:0; right:0; bottom:-110%;
+      background:rgba(40,80,50,.72);
       border-top:3px solid var(--lime);
-      box-shadow: 0 -16px 40px rgba(0,0,0,.55);
-      transition: bottom .18s ease;
-      z-index:70;
-      padding:14px;
+      box-shadow:0 -16px 40px rgba(0,0,0,.55);
+      transition:bottom .18s ease; z-index:70; padding:14px;
     }
     .sheet.show{ bottom:0; }
-
     .sheetInner{ max-width:980px; margin:0 auto; }
     .sheetTop{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
-
-    .cols{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      margin-top:12px;
-    }
-    .cols.oneCol{ grid-template-columns: 1fr; }
-
+    .cols{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+    .cols.oneCol{ grid-template-columns:1fr; }
     .col{
-      border:1px solid rgba(200,255,46,.32);
-      border-radius:14px;
-      padding:12px;
-      background: rgba(200,255,46,.16);
-      white-space:pre-wrap;
-      max-height: 46vh;
-      overflow:auto;
+      border:1px solid rgba(200,255,46,.32); border-radius:14px;
+      padding:12px; background:rgba(200,255,46,.16);
+      white-space:pre-wrap; max-height:46vh; overflow:auto;
     }
-
     #scriptJa{ font-size:27px; line-height:1.45; font-weight:400; }
     #scriptJa rt{ font-size:0.80em; opacity:0.92; }
     #scriptEn{ font-size:14px; line-height:1.5; color:rgba(255,255,255,.85); }
 
     .hidden{ display:none !important; }
+
+    /* ===== mini-markup styles ===== */
+    .thick{ font-weight:1900; letter-spacing:.02em; }
+    .mk-hl{ background:rgba(255,255,0,.25); padding:0 .22em; border-radius:.28em; }
+    .mk-big{ font-size:1.22em; font-weight:900; }
+    .mk-small{ font-size:.86em; opacity:.98; }
+    .mk-i{ font-style:italic; }
+    u{ text-underline-offset:.18em; }
+
+    /* ===== Keep-going modal ===== */
+    .keepGoing{
+      position:fixed; inset:0; display:none;
+      align-items:center; justify-content:center;
+      background:rgba(0,0,0,.9); z-index:120; padding:18px;
+    }
+    .keepGoing.show{ display:flex; }
+    .keepGoing img{ width:min(520px,86vw); height:auto; user-select:none; -webkit-user-drag:none; }
+    .keepFallback{
+      width:min(520px,86vw); padding:18px 16px; border-radius:18px;
+      border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06);
+      backdrop-filter:blur(10px); box-shadow:0 18px 50px rgba(0,0,0,.55); text-align:center;
+    }
+    .keepFallback .main{ font-size:30px; font-weight:900; margin:4px 0 6px; }
+    .keepFallback .rb{ font-size:14px; opacity:.85; margin-bottom:6px; }
+    .keepFallback .en{ font-size:14px; opacity:.85; }
 
     @media (max-width:520px){
       .exitBtn{ width:78px; }
@@ -367,179 +396,10 @@
       .checkBtn{ width:208px; }
       .promptJa{ font-size:25px; }
       #scriptJa{ font-size:25px; }
-      .cols{ grid-template-columns: 1fr; }
+      .cols{ grid-template-columns:1fr; }
+      .matchChip{ font-size:14px; padding:10px 10px; }
     }
-  /* ===== mini-markup styles ===== */
-.thick{ font-weight:1900; letter-spacing:.02em; }
-
-.mk-hl{ background:rgba(255,255,0,.25); padding:0 .22em; border-radius:.28em; }
-.mk-big{ font-size:1.22em; font-weight:900; }
-.mk-small{ font-size:.86em; opacity:.98; }
-.mk-i{ font-style:italic; }
-u{ text-underline-offset: .18em; }
-
-/* ===== Keep-going modal (after Round 1 if mistakes exist) ===== */
-.keepGoing{
-  position:fixed; inset:0;
-  display:none;
-  align-items:center; justify-content:center;
-  background:rgba(0,0,0,.9);
-  z-index:120;
-  padding:18px;
-}
-.keepGoing.show{ display:flex; }
-.keepGoing img{
-  width:min(520px, 86vw);
-  height:auto;
-  user-select:none;
-  -webkit-user-drag:none;
-}
-.keepFallback{
-  width:min(520px, 86vw);
-  padding:18px 16px;
-  border-radius:18px;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(255,255,255,.06);
-  backdrop-filter: blur(10px);
-  box-shadow:0 18px 50px rgba(0,0,0,.55);
-  text-align:center;
-}
-.keepFallback .main{ font-size:30px; font-weight:900; margin:4px 0 6px; }
-.keepFallback .rb{ font-size:14px; opacity:.85; margin-bottom:6px; }
-.keepFallback .en{ font-size:14px; opacity:.85; }
-
-/* ========= New interactions (q_type_4/5/6/8) ========= */
-.inputWrap{
-  display:flex; gap:10px; align-items:center;
-  padding:12px 10px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:14px;
-}
-.ansInput{
-  flex:1;
-  background:transparent;
-  border:none;
-  outline:none;
-  color:var(--fg);
-  font-size:18px;
-  padding:10px 12px;
-  border-radius:12px;
-}
-.hintPill{
-  font-size:12px;
-  color:rgba(255,255,255,.75);
-  padding:6px 10px;
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:999px;
-  white-space:nowrap;
-}
-
-.reorderWrap{
-  display:grid;
-  gap:12px;
-}
-.reorderBank, .reorderAnswer{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  padding:12px 10px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:14px;
-  min-height:56px;
-}
-.tokenBtn, .tokenChip{
-  user-select:none;
-  cursor:pointer;
-  padding:10px 12px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(0,0,0,.22);
-  color:var(--fg);
-  font-size:16px;
-  line-height:1;
-}
-.tokenBtn:active{ transform:scale(.99); }
-.tokenChip{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-}
-.tokenChip.dragging{ opacity:.55; }
-.tokenX{
-  font-size:14px;
-  opacity:.8;
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:999px;
-  padding:2px 7px;
-}
-
-.imgToken{
-  width:86px;
-  height:64px;
-  object-fit:cover;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(0,0,0,.25);
-}
-.imgChip{
-  padding:8px;
-  border-radius:14px;
-}
-
-.matchWrap{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-.matchCol{
-  padding:12px 10px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:14px;
-  min-height:140px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.matchBtn{
-  text-align:left;
-  padding:10px 12px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(0,0,0,.22);
-  color:var(--fg);
-  cursor:pointer;
-  font-size:16px;
-}
-.matchBtn.active{
-  outline:2px solid rgba(200,255,46,.9);
-  box-shadow:0 0 18px rgba(200,255,46,.25);
-}
-.matchBtn.done{
-  opacity:.55;
-  pointer-events:none;
-}
-.pairsBox{
-  margin-top:12px;
-  padding:12px 10px;
-  background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:14px;
-  color:rgba(255,255,255,.85);
-  font-size:14px;
-}
-.pairRow{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:6px 0;
-  border-bottom:1px dashed rgba(255,255,255,.14);
-}
-.pairRow:last-child{ border-bottom:none; }
-
-</style>
+  </style>
 </head>
 
 <body>
@@ -549,11 +409,9 @@ u{ text-underline-offset: .18em; }
     <div class="exitBar" id="exitBar">
       <div class="exitBarInner">
         <img class="btnImg exitBtnImg" id="exitContinue"
-             src="assets/ui/buttons/button-exit_confirmation-continue.png"
-             alt="Continue" />
+             src="assets/ui/buttons/button-exit_confirmation-continue.png" alt="Continue" />
         <img class="btnImg exitBtnImg" id="exitQuit"
-             src="assets/ui/buttons/button-exit_confirmation-quit.png"
-             alt="Quit" />
+             src="assets/ui/buttons/button-exit_confirmation-quit.png" alt="Quit" />
       </div>
     </div>
 
@@ -561,15 +419,12 @@ u{ text-underline-offset: .18em; }
     <div class="top">
       <div class="leftTop">
         <img class="btnImg exitBtn" id="exitBtn"
-             src="assets/ui/buttons/button-exit.png"
-             alt="Exit" />
-
+             src="assets/ui/buttons/button-exit.png" alt="Exit" />
         <div class="statusRow">
           <div class="statusPill" id="qCount">Q: 1/1</div>
           <div class="statusPill" id="scoreBox">Score: 0/1</div>
         </div>
       </div>
-
       <div class="uiToggle">
         <div class="uiPill on" id="uiEn">English UI</div>
         <div class="uiPill" id="uiJa">日本語UI</div>
@@ -579,11 +434,9 @@ u{ text-underline-offset: .18em; }
     <!-- Instruction area -->
     <div class="inst">
       <img class="btnImg audioBtn" id="playBtn"
-           src="assets/ui/buttons/button-audio-play.png"
-           alt="Play" />
+           src="assets/ui/buttons/button-audio-play.png" alt="Play" />
       <img class="btnImg audioBtn" id="pauseBtn"
-           src="assets/ui/buttons/button-audio-pause.png"
-           alt="Pause" style="display:none;" />
+           src="assets/ui/buttons/button-audio-pause.png" alt="Pause" style="display:none;" />
       <div class="instText" id="instText">Listen</div>
     </div>
 
@@ -593,11 +446,37 @@ u{ text-underline-offset: .18em; }
       <p class="promptEn" id="promptEn"></p>
     </div>
 
-    <!-- Images -->
+    <!-- Images (type 1,2,3,6) -->
     <div class="grid" id="imgGrid" style="display:none;"></div>
 
-    <!-- Choices -->
+    <!-- TYPE 1,2,3,7 — MCQ -->
     <div class="choices" id="choices"></div>
+
+    <!-- TYPE 6 — Text input -->
+    <div id="inputArea">
+      <input class="inputField" id="inputField" type="text"
+             autocomplete="off" autocorrect="off" autocapitalize="off"
+             spellcheck="false" placeholder="…" inputmode="text" enterkeyhint="done" />
+      <div class="inputHint" id="inputHint"></div>
+    </div>
+
+    <!-- TYPE 4/5 — Reorder -->
+    <div id="reorderArea">
+      <div class="reorderLabel" id="reorderAnswerLabel">Answer</div>
+      <div class="reorderAnswer" id="reorderAnswer"></div>
+      <div class="reorderLabel" id="reorderBankLabel">Choices</div>
+      <div class="reorderBank" id="reorderBank"></div>
+    </div>
+
+    <!-- TYPE 8 — Matching -->
+    <div id="matchArea">
+      <div class="matchGrid">
+        <div class="matchCol" id="matchLeft"></div>
+        <div class="matchCol" id="matchRight"></div>
+      </div>
+      <div class="matchStatus" id="matchStatus"></div>
+    </div>
+
   </div>
 
   <!-- Bottom bar -->
@@ -605,8 +484,7 @@ u{ text-underline-offset: .18em; }
     <div class="bottomInner">
       <div style="width:1px;"></div>
       <img class="btnImg checkBtn" id="checkBtn"
-           src="assets/ui/buttons/button-check.png"
-           alt="Check" />
+           src="assets/ui/buttons/button-check.png" alt="Check" />
       <div class="rightActions">
         <div class="qa" id="qaScript">🔎 <span class="sub">Script</span></div>
         <div class="qa save" id="qaSave">🔖 <span class="sub" id="saveText">Saved</span></div>
@@ -614,39 +492,38 @@ u{ text-underline-offset: .18em; }
     </div>
   </div>
 
-  
-<!-- Keep-going modal (shown once after Round 1 if mistakes exist) -->
-<div id="keepGoingModal" class="keepGoing" aria-hidden="true">
-  <img id="keepGoingImg" src="assets/ui/messages/message-keep_going.png" alt="Keep going" />
-  <div id="keepGoingFallback" class="keepFallback" style="display:none;">
-    <div class="rb">ぜっこうちょう</div>
-    <div class="main">絶好調！</div>
-    <div class="en">Zekkōchō<br>We're on a roll!!</div>
-    <div style="height:14px"></div>
-    <div class="rb">どんどん　いこう</div>
-    <div class="main">どんどん行こう！</div>
-    <div class="en">Dondon ikō<br>Let's keep going!</div>
-    <div style="margin-top:14px; font-size:12px; opacity:.65;">(Tap anywhere)</div>
+  <!-- Keep-going modal -->
+  <div id="keepGoingModal" class="keepGoing" aria-hidden="true">
+    <img id="keepGoingImg" src="assets/ui/messages/message-keep_going.png" alt="Keep going" />
+    <div id="keepGoingFallback" class="keepFallback" style="display:none;">
+      <div class="rb">ぜっこうちょう</div>
+      <div class="main">絶好調！</div>
+      <div class="en">Zekkōchō<br>We're on a roll!!</div>
+      <div style="height:14px"></div>
+      <div class="rb">どんどん　いこう</div>
+      <div class="main">どんどん行こう！</div>
+      <div class="en">Dondon ikō<br>Let's keep going!</div>
+      <div style="margin-top:14px; font-size:12px; opacity:.65;">(Tap anywhere)</div>
+    </div>
   </div>
-</div>
 
-<!-- Result overlay -->
+  <!-- Result overlay -->
   <div class="overlay" id="overlay">
     <div class="panel" id="resultPanel">
       <div class="panelTop">
         <img class="btnImg exitBtn" id="overlayCloseBtn"
-             src="assets/ui/buttons/button-exit.png"
-             alt="Close" />
+             src="assets/ui/buttons/button-exit.png" alt="Close" />
       </div>
-
       <img class="resultMsg" id="resultMsg"
-           src="assets/ui/messages/message-result-pin.png"
-           alt="Result" />
-
+           src="assets/ui/messages/message-result-pin.png" alt="Result" />
+      <!-- Correct answer shown on wrong answers -->
+      <div class="correctAnswerBox" id="correctAnswerBox">
+        <div class="label" id="correctAnswerLabel">Correct answer:</div>
+        <div id="correctAnswerText"></div>
+      </div>
       <div class="panelBtns">
         <img class="btnImg continueBtn" id="continueBtn"
-             src="assets/ui/buttons/button-result-continue.png"
-             alt="Continue" />
+             src="assets/ui/buttons/button-result-continue.png" alt="Continue" />
         <div class="panelMini">
           <span id="panelScript" style="cursor:pointer; user-select:none;">
             🔎 <span style="font-size:14px; color:rgba(255,255,255,.75); margin-left:6px;">Script</span>
@@ -664,11 +541,9 @@ u{ text-underline-offset: .18em; }
     <div class="sheetInner">
       <div class="sheetTop">
         <img class="btnImg exitBtn" id="sheetExitBtn"
-             src="assets/ui/buttons/button-exit.png"
-             alt="Exit" />
+             src="assets/ui/buttons/button-exit.png" alt="Exit" />
         <div style="opacity:.9; font-size:14px;">Script</div>
       </div>
-
       <div class="cols" id="scriptCols">
         <div class="col" id="scriptJa"></div>
         <div class="col" id="scriptEn"></div>
@@ -677,79 +552,75 @@ u{ text-underline-offset: .18em; }
   </div>
 
 <script>
-/* ========= localStorage keys for result page ========= */
+/* =============================================
+   LOCALSTORAGE KEYS
+   ============================================= */
 const LS_LAST_SET   = "JPQ_LAST_SET_ID";
 const LS_LAST_SCORE = "JPQ_LAST_SCORE";
 const LS_LAST_TOTAL = "JPQ_LAST_TOTAL";
+const LS_SETS = "JPQ_SETS_CSV";
+const LS_QS   = "JPQ_QUESTIONS_CSV";
+const LS_UI   = "JPQ_UI_TEXT_CSV";
+const LS_SAVED_Q = "JPQ_SAVED_QIDS_BY_SET";
+const LS_WRONG_IDS_BY_SET = "JPQ_WRONG_IDS_BY_SET";
 
-/* ========= Data source (GitHub版: always fetch from /data) ========= */
+/* =============================================
+   CSV LOADING & PARSING
+   ============================================= */
 async function getCSV(kind){
-  const path = (kind==="sets") ? "data/sets.csv" :
-               (kind==="questions") ? "data/questions.csv" :
-               "data/ui_text.csv";
+  const key = kind==="sets" ? LS_SETS : kind==="questions" ? LS_QS : LS_UI;
+  const uploaded = localStorage.getItem(key);
+  if(uploaded) return uploaded;
+  const path = kind==="sets" ? "data/sets.csv" : kind==="questions" ? "data/questions.csv" : "data/ui_text.csv";
   const res = await fetch(path);
   if(!res.ok) return "";
   return await res.text();
 }
 
-
-/* ========= CSV parser ========= */
 function parseCSV(text){
-  const rows=[];
-  let row=[], cur="", inQ=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i], n=text[i+1];
+  const rows = [];
+  let row = [], cur = "", inQ = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i], n = text[i+1];
     if(c === '"'){
-      if(inQ && n === '"'){ cur+='"'; i++; }
-      else inQ=!inQ;
+      if(inQ && n === '"'){ cur += '"'; i++; }
+      else inQ = !inQ;
     } else if(c === ',' && !inQ){
-      row.push(cur); cur="";
-    } else if((c==='\n' || c==='\r') && !inQ){
-      if(c==='\r' && n==='\n') i++;
+      row.push(cur); cur = "";
+    } else if((c === '\n' || c === '\r') && !inQ){
+      if(c === '\r' && n === '\n') i++;
       row.push(cur);
-      if(row.some(v=>v.trim()!=="")) rows.push(row);
-      row=[]; cur="";
-    } else cur+=c;
+      if(row.some(v => v.trim() !== "")) rows.push(row);
+      row = []; cur = "";
+    } else cur += c;
   }
   row.push(cur);
-  if(row.some(v=>v.trim()!=="")) rows.push(row);
-
-  const header = rows.shift().map(h=>h.trim());
-  return rows.map(r=>{
-    const o={};
-    header.forEach((h,idx)=>o[h]=(r[idx]??"").trim());
+  if(row.some(v => v.trim() !== "")) rows.push(row);
+  const header = rows.shift().map(h => h.trim());
+  return rows.map(r => {
+    const o = {};
+    header.forEach((h, idx) => o[h] = (r[idx] ?? "").trim());
     return o;
   });
 }
 
-/* ========= mini markup ========= */
+/* =============================================
+   MINI MARKUP
+   ============================================= */
 function decodeHTMLEntities(str){
-  // Turns "&lt;b&gt;" into "<b>" so tags/markup from CSV can render
   const t = document.createElement("textarea");
   t.innerHTML = String(str ?? "");
   return t.value;
 }
 function escapeHTML(str){
-  return String(str).replace(/[&<>"']/g, m => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[m]));
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 function miniMarkupToHTML(s){
   if(!s) return "";
-  // 1) decode entities first (so <b> etc works even if CSV escaped)
   let out = decodeHTMLEntities(String(s));
-
-  // 2) allow simple tokens
   out = out.replace(/\[br\]/gi, "<br>");
-
-  // 3) Ruby in two styles:
-  //    A) [ruby]漢字[rt]かんじ[/rt][/ruby]
-  //    B) <ruby>漢字<rt>かんじ</rt></ruby>  (already works after entity-decode)
-  out = out.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/gi, (_, rb, rt) => {
-    return `<ruby>${escapeHTML(rb)}<rt>${escapeHTML(rt)}</rt></ruby>`;
-  });
-
-  // 4) lightweight “BBCode-ish” styling
+  out = out.replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/gi,
+    (_, rb, rt) => `<ruby>${escapeHTML(rb)}<rt>${escapeHTML(rt)}</rt></ruby>`);
   out = out.replace(/\[b\]([\s\S]*?)\[\/b\]/gi, "<b>$1</b>");
   out = out.replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<span class="mk-i">$1</span>');
   out = out.replace(/\[u\]([\s\S]*?)\[\/u\]/gi, "<u>$1</u>");
@@ -757,830 +628,290 @@ function miniMarkupToHTML(s){
   out = out.replace(/\[big\]([\s\S]*?)\[\/big\]/gi, '<span class="mk-big">$1</span>');
   out = out.replace(/\[small\]([\s\S]*?)\[\/small\]/gi, '<span class="mk-small">$1</span>');
   out = out.replace(/\[thick\]([\s\S]*?)\[\/thick\]/gi, '<span class="thick">$1</span>');
-
   return out;
 }
 
-/* ========= UI text map ========= */
+/* =============================================
+   UI TEXT MAP
+   ============================================= */
 function buildUiTextMap(rows){
-  const m = new Map(); // ui|type -> text
+  const m = new Map();
   for(const r of rows){
-    const ui = (r.ui || "").trim();
-    const key = (r.key || "").trim();
-    const text = (r.text || "").trim();
+    const ui = (r.ui||"").trim(), key = (r.key||"").trim(), text = (r.text||"").trim();
     if(ui && key) m.set(`${ui}|${key}`, text);
   }
   return m;
 }
 
-/* ========= Saved questions (per set) ========= */
-const LS_SAVED_Q = "JPQ_SAVED_QIDS_BY_SET"; // { [setId]: [qId,...] }
-function getSavedMap(){
-  try{ return JSON.parse(localStorage.getItem(LS_SAVED_Q)||"{}"); }catch(e){ return {}; }
-}
-function getSavedIdsForSet(sid){
-  const m=getSavedMap();
-  const a=m[sid];
-  return Array.isArray(a)? a : [];
-}
-function setSavedIdsForSet(sid, arr){
-  const m=getSavedMap();
-  m[sid] = Array.from(new Set(arr));
-  localStorage.setItem(LS_SAVED_Q, JSON.stringify(m));
-}
-function isSavedQ(sid, qid){
-  return getSavedIdsForSet(sid).includes(qid);
-}
-function toggleSavedQ(sid, qid){
-  const arr = getSavedIdsForSet(sid);
-  const i = arr.indexOf(qid);
-  if(i>=0) arr.splice(i,1); else arr.push(qid);
-  setSavedIdsForSet(sid, arr);
-}
+/* =============================================
+   SAVED / WRONG HELPERS
+   ============================================= */
+function getSavedMap(){ try{ return JSON.parse(localStorage.getItem(LS_SAVED_Q)||"{}"); }catch(e){ return {}; } }
+function getSavedIdsForSet(sid){ const m=getSavedMap(); const a=m[sid]; return Array.isArray(a)?a:[]; }
+function setSavedIdsForSet(sid, arr){ const m=getSavedMap(); m[sid]=Array.from(new Set(arr)); localStorage.setItem(LS_SAVED_Q,JSON.stringify(m)); }
+function isSavedQ(sid, qid){ return getSavedIdsForSet(sid).includes(qid); }
+function toggleSavedQ(sid, qid){ const arr=getSavedIdsForSet(sid); const i=arr.indexOf(qid); if(i>=0) arr.splice(i,1); else arr.push(qid); setSavedIdsForSet(sid,arr); }
 
-/* ========= Quiz state ========= */
-const url = new URL(location.href);
-const setId = url.searchParams.get("set_id") || "";
-const mode  = (url.searchParams.get("mode") || "").toLowerCase(); // "review" | "saved"
-
-let allItems = [];       // full set items
-let items = [];          // current round items (subset)
-let idx = 0;
-let score = 0;
-let selectedIndex = null;
-
-let roundNum = 1;
-let remainingWrong = new Set(); // qIds not yet mastered
-let keepGoingShown = false;
-
-let correctIndexNow = 0;
-let uiMode = "en";
-let uiTextMap = new Map();
-
-/* ========= IMPORTANT: write last result for result.html ========= */
-function saveLastResult(){
-  localStorage.setItem(LS_LAST_SET, setId);
-  localStorage.setItem(LS_LAST_SCORE, String(score));
-  localStorage.setItem(LS_LAST_TOTAL, String(items.length || 1));
-}
-/* ========= Wrong tracking (Duolingo loop) ========= */
-const LS_WRONG_IDS_BY_SET = "JPQ_WRONG_IDS_BY_SET"; // { [setId]: [qId,...] }
-function getWrongMap(){
-  try{ return JSON.parse(localStorage.getItem(LS_WRONG_IDS_BY_SET)||"{}"); }catch(e){ return {}; }
-}
-function setWrongIdsForSet(sid, ids){
-  const m=getWrongMap();
-  m[sid] = Array.from(new Set(ids));
-  localStorage.setItem(LS_WRONG_IDS_BY_SET, JSON.stringify(m));
-}
-function getWrongIdsForSet(sid){
-  const m=getWrongMap();
-  const a=m[sid];
-  return Array.isArray(a)? a : [];
-}
+function getWrongMap(){ try{ return JSON.parse(localStorage.getItem(LS_WRONG_IDS_BY_SET)||"{}"); }catch(e){ return {}; } }
+function setWrongIdsForSet(sid, ids){ const m=getWrongMap(); m[sid]=Array.from(new Set(ids)); localStorage.setItem(LS_WRONG_IDS_BY_SET,JSON.stringify(m)); }
+function getWrongIdsForSet(sid){ const m=getWrongMap(); const a=m[sid]; return Array.isArray(a)?a:[]; }
 function persistWrong(){
   setWrongIdsForSet(setId, Array.from(remainingWrong));
   localStorage.setItem(`JPQ_WRONG_COUNT_${setId}`, String(remainingWrong.size));
   localStorage.setItem(`JPQ_TRIED_${setId}`, "1");
 }
 
-/* ========= Stable QID ========= */
-function getQId(q, i){
-  return (q.q_id || q.id || q.question_id || "").trim() || `${setId}__${i+1}`;
+/* =============================================
+   QUIZ STATE
+   ============================================= */
+const urlP = new URL(location.href);
+const setId = urlP.searchParams.get("set_id") || "";
+const mode  = (urlP.searchParams.get("mode") || "").toLowerCase();
+
+let allItems = [], items = [], idx = 0, score = 0;
+let roundNum = 1, remainingWrong = new Set(), keepGoingShown = false;
+let uiMode = "en", uiTextMap = new Map();
+
+// MCQ state
+let mcqSelectedIndex = null, mcqCorrectIndex = 0;
+
+// Reorder state
+let reorderCorrect = [];
+
+// Matching state
+let matchPairs = [];
+let matchSelectedSide = null, matchSelectedIdx = null;
+let matchedCount = 0;
+
+function saveLastResult(){
+  localStorage.setItem(LS_LAST_SET, setId);
+  localStorage.setItem(LS_LAST_SCORE, String(score));
+  localStorage.setItem(LS_LAST_TOTAL, String(items.length || 1));
 }
 function shuffle(arr){
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
+  const a = [...arr];
+  for(let i = a.length-1; i > 0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
   }
   return a;
 }
-
-/* ========= Answer normalization (q_type_6_input strict rules) ========= */
-function isHiraganaOnly(s){
-  return /^[぀-ゟー]+$/.test(s); // allow ー for completeness
-}
-function isKatakanaOnly(s){
-  return /^[゠-ヿー]+$/.test(s);
-}
-function isRomajiLike(s){
-  return /^[A-Za-zĀ-ſ̄\s\-']+$/.test(s); // includes macron vowels + combining macron
-}
-function toMacronRomaji(raw){
-  if(!raw) return "";
-  let s = String(raw).trim().toLowerCase();
-
-  // Normalize combining macrons to composed where possible
-  s = s.normalize("NFC");
-
-  // Convert combining macron forms explicitly (ā etc) just in case
-  s = s
-    .replace(/ā/g, "ā")
-    .replace(/ī/g, "ī")
-    .replace(/ū/g, "ū")
-    .replace(/ē/g, "ē")
-    .replace(/ō/g, "ō");
-
-  // Apply your locked long-vowel rules (PC spell -> macron)
-  // NOTE: This makes ou and oo both become ō (so ikou / ikoo both match ikō)
-  s = s
-    .replace(/aa/g, "ā")
-    .replace(/ii/g, "ī")
-    .replace(/uu/g, "ū")
-    .replace(/ei/g, "ē")
-    .replace(/ou/g, "ō")
-    .replace(/oo/g, "ō");
-
-  // Remove spaces/hyphens (optional; if you want them strict, delete these 2 lines)
-  s = s.replace(/[\s\-']/g, "");
-
-  return s;
-}
-function checkInputStrict(userInput, choicesText){
-  const inputRaw = String(userInput ?? "").trim();
-  if(!inputRaw) return false;
-
-  const answers = String(choicesText || "")
-    .split("|")
-    .map(v => String(v).trim())
-    .filter(Boolean);
-
-  // If there is at least one hiragana-only answer, accept ONLY hiragana answers (no conversion)
-  const hira = answers.filter(isHiraganaOnly);
-  if(hira.length){
-    if(!isHiraganaOnly(inputRaw)) return false;
-    return hira.includes(inputRaw);
-  }
-
-  // If there is at least one katakana-only answer, accept ONLY katakana answers (no conversion)
-  const kata = answers.filter(isKatakanaOnly);
-  if(kata.length){
-    if(!isKatakanaOnly(inputRaw)) return false;
-    return kata.includes(inputRaw);
-  }
-
-  // Otherwise treat as "kanji / mixed JP / romaji candidates"
-  // 1) Exact match against any non-romaji Japanese (kanji/mixed)
-  const nonRomaji = answers.filter(a => !isRomajiLike(a));
-  if(nonRomaji.length){
-    // strict: no kana conversion; exact only
-    if(nonRomaji.includes(inputRaw)) return true;
-  }
-
-  // 2) Romaji: accept only your spellings or macron forms that normalize to the same macron string
-  const romaji = answers.filter(isRomajiLike);
-  if(romaji.length){
-    if(!isRomajiLike(inputRaw)) return false;
-    const inNorm = toMacronRomaji(inputRaw);
-    return romaji.some(a => toMacronRomaji(a) === inNorm);
-  }
-
-  return false;
-}
-
-/* ========= New interaction renderers ========= */
-let inputEl = null;
-
-// reorder state
-let reorderAnswer = [];   // array of tokens (string) or image paths
-let reorderCorrect = [];  // correct array
-let reorderIsImage = false;
-
-// matching state
-let matchLeft = [];
-let matchRight = [];
-let matchMap = new Map(); // left -> right (correct)
-let matchPairs = new Map(); // left -> chosen right
-let matchPickLeft = null;
-
-function clearInteractionState(){
-  selectedIndex = null;
-  correctIndexNow = null;
-  inputEl = null;
-  reorderAnswer = [];
-  reorderCorrect = [];
-  reorderIsImage = false;
-  matchLeft = [];
-  matchRight = [];
-  matchMap = new Map();
-  matchPairs = new Map();
-  matchPickLeft = null;
-}
-
-function renderChoicesMCQ(q){
-  renderChoices(q);
-}
-
-function renderInput(q){
-  const wrap = document.getElementById("choices");
-  wrap.classList.remove("twoCol");
-  wrap.innerHTML = "";
-
-  const box = document.createElement("div");
-  box.className = "inputWrap";
-
-  const hint = document.createElement("div");
-  hint.className = "hintPill";
-  hint.textContent = (uiMode==="ja") ? "日本語 / ローマ字 OK" : "JP / romaji OK";
-
-  inputEl = document.createElement("input");
-  inputEl.className = "ansInput";
-  inputEl.type = "text";
-  inputEl.autocomplete = "off";
-  inputEl.autocapitalize = "none";
-  inputEl.spellcheck = false;
-  inputEl.placeholder = (uiMode==="ja") ? "ここに入力…" : "Type here…";
-
-  // Mobile keyboard overlap mitigation: scroll into view on focus
-  inputEl.addEventListener("focus", ()=>{
-    setTimeout(()=> inputEl.scrollIntoView({behavior:"smooth", block:"center"}), 50);
-  });
-
-  box.appendChild(inputEl);
-  box.appendChild(hint);
-  wrap.appendChild(box);
-
-  // Helpful: focus immediately
-  setTimeout(()=>{ try{ inputEl.focus(); }catch(e){} }, 50);
-}
-
-function renderReorder(q, isImage){
-  const wrap = document.getElementById("choices");
-  wrap.classList.remove("twoCol");
-  wrap.innerHTML = "";
-
-  reorderIsImage = !!isImage;
-
-  const outer = document.createElement("div");
-  outer.className = "reorderWrap";
-
-  const bank = document.createElement("div");
-  bank.className = "reorderBank";
-
-  const ans = document.createElement("div");
-  ans.className = "reorderAnswer";
-  ans.dataset.role = "answer";
-
-  const label1 = document.createElement("div");
-  label1.className = "hintPill";
-  label1.textContent = (uiMode==="ja") ? "タップして解答欄へ" : "Tap to add";
-
-  const label2 = document.createElement("div");
-  label2.className = "hintPill";
-  label2.textContent = (uiMode==="ja") ? "ドラッグで並び替え" : "Drag to reorder";
-
-  // Build tokens
-  const tokens = (isImage ? String(q.image_files||"") : String(q.choices_text||""))
-    .split("|").map(v=>v.trim()).filter(Boolean);
-
-  reorderCorrect = tokens.slice();
-
-  // show shuffled bank (but keep correct order separately)
-  const bankTokens = shuffle(tokens.map(t=>t));
-
-  bankTokens.forEach(tok=>{
-    const btn = document.createElement("button");
-    btn.className = "tokenBtn";
-    btn.type = "button";
-
-    if(isImage){
-      const img = document.createElement("img");
-      img.src = tok;
-      img.alt = "";
-      img.className = "imgToken";
-      btn.classList.add("imgChip");
-      btn.appendChild(img);
-    }else{
-      btn.textContent = tok;
-    }
-
-    btn.addEventListener("click", ()=>{
-      reorderAnswer.push(tok);
-      renderReorderAnswer(ans);
-    });
-
-    bank.appendChild(btn);
-  });
-
-  outer.appendChild(label1);
-  outer.appendChild(bank);
-  outer.appendChild(label2);
-  outer.appendChild(ans);
-  wrap.appendChild(outer);
-
-  // Allow dropping to reorder within answer
-  setupAnswerDnD(ans);
-}
-
-function renderReorderAnswer(ansEl){
-  ansEl.innerHTML = "";
-  reorderAnswer.forEach((tok, i)=>{
-    const chip = document.createElement("div");
-    chip.className = "tokenChip";
-    chip.draggable = true;
-    chip.dataset.index = String(i);
-
-    if(reorderIsImage){
-      const img = document.createElement("img");
-      img.src = tok;
-      img.alt = "";
-      img.className = "imgToken";
-      chip.classList.add("imgChip");
-      chip.appendChild(img);
-    }else{
-      chip.textContent = tok;
-    }
-
-    const x = document.createElement("span");
-    x.className = "tokenX";
-    x.textContent = "×";
-    x.addEventListener("click", (ev)=>{
-      ev.stopPropagation();
-      reorderAnswer.splice(i,1);
-      renderReorderAnswer(ansEl);
-    });
-    chip.appendChild(x);
-
-    // drag handlers
-    chip.addEventListener("dragstart", (e)=>{
-      chip.classList.add("dragging");
-      e.dataTransfer.setData("text/plain", String(i));
-    });
-    chip.addEventListener("dragend", ()=>chip.classList.remove("dragging"));
-
-    ansEl.appendChild(chip);
-  });
-}
-function setupAnswerDnD(ansEl){
-  ansEl.addEventListener("dragover", (e)=>{ e.preventDefault(); });
-  ansEl.addEventListener("drop", (e)=>{
-    e.preventDefault();
-    const from = parseInt(e.dataTransfer.getData("text/plain"),10);
-    if(!Number.isFinite(from)) return;
-
-    // determine drop index by nearest chip
-    const chips = [...ansEl.querySelectorAll(".tokenChip")];
-    const y = e.clientY;
-    let to = chips.length;
-    for(let i=0;i<chips.length;i++){
-      const r = chips[i].getBoundingClientRect();
-      if(y < r.top + r.height/2){ to = i; break; }
-    }
-    if(to === from) return;
-
-    const item = reorderAnswer.splice(from,1)[0];
-    reorderAnswer.splice(to,0,item);
-    renderReorderAnswer(ansEl);
-  });
-}
-
-function renderMatching(q){
-  const wrap = document.getElementById("choices");
-  wrap.classList.remove("twoCol");
-  wrap.innerHTML = "";
-
-  // Parse pairs: left=right | left=right ...
-  const parts = String(q.choices_text||"").split("|").map(v=>v.trim()).filter(Boolean);
-  const pairs = [];
-  parts.forEach(p=>{
-    const eq = p.indexOf("=");
-    if(eq>-1){
-      const left = p.slice(0,eq).trim();
-      const right = p.slice(eq+1).trim();
-      if(left && right) pairs.push([left,right]);
-    }
-  });
-
-  matchMap = new Map(pairs); // correct
-  matchLeft = shuffle(pairs.map(x=>x[0]));
-  matchRight = shuffle(pairs.map(x=>x[1]));
-  matchPairs = new Map();
-  matchPickLeft = null;
-
-  const outer = document.createElement("div");
-
-  const grid = document.createElement("div");
-  grid.className = "matchWrap";
-
-  const colL = document.createElement("div");
-  colL.className = "matchCol";
-
-  const colR = document.createElement("div");
-  colR.className = "matchCol";
-
-  const lTitle = document.createElement("div");
-  lTitle.className = "hintPill";
-  lTitle.textContent = (uiMode==="ja") ? "左を選ぶ" : "Pick left";
-  colL.appendChild(lTitle);
-
-  const rTitle = document.createElement("div");
-  rTitle.className = "hintPill";
-  rTitle.textContent = (uiMode==="ja") ? "右を選ぶ" : "Pick right";
-  colR.appendChild(rTitle);
-
-  matchLeft.forEach(left=>{
-    const b = document.createElement("button");
-    b.className = "matchBtn";
-    b.type="button";
-    b.textContent = left;
-    b.addEventListener("click", ()=>{
-      if(matchPairs.has(left)) return;
-      matchPickLeft = left;
-      // highlight
-      [...colL.querySelectorAll(".matchBtn")].forEach(x=>x.classList.remove("active"));
-      b.classList.add("active");
-    });
-    colL.appendChild(b);
-  });
-
-  matchRight.forEach(right=>{
-    const b = document.createElement("button");
-    b.className = "matchBtn";
-    b.type="button";
-    b.textContent = right;
-    b.addEventListener("click", ()=>{
-      if(!matchPickLeft) return;
-      // prevent using same right twice
-      if([...matchPairs.values()].includes(right)) return;
-
-      matchPairs.set(matchPickLeft, right);
-
-      // mark left done
-      const leftBtns = [...colL.querySelectorAll(".matchBtn")];
-      leftBtns.forEach(x=>{
-        if(x.textContent === matchPickLeft){
-          x.classList.remove("active");
-          x.classList.add("done");
-        }
-      });
-
-      // mark right done
-      const rightBtns = [...colR.querySelectorAll(".matchBtn")];
-      rightBtns.forEach(x=>{
-        if(x.textContent === right){
-          x.classList.add("done");
-        }
-      });
-
-      matchPickLeft = null;
-      renderPairsBox(outer);
-    });
-    colR.appendChild(b);
-  });
-
-  grid.appendChild(colL);
-  grid.appendChild(colR);
-  outer.appendChild(grid);
-
-  const pairsBox = document.createElement("div");
-  pairsBox.className = "pairsBox";
-  pairsBox.id = "pairsBox";
-  outer.appendChild(pairsBox);
-
-  wrap.appendChild(outer);
-
-  renderPairsBox(outer);
-}
-
-function renderPairsBox(outer){
-  const box = outer.querySelector("#pairsBox");
-  if(!box) return;
-
-  const total = matchMap.size;
-  const done = matchPairs.size;
-
-  box.innerHTML = "";
-  const head = document.createElement("div");
-  head.style.marginBottom = "8px";
-  head.innerHTML = `<b>${(uiMode==="ja") ? "ペア" : "Pairs"}:</b> ${done}/${total}  ${(uiMode==="ja") ? "（やり直し: 左の×で削除）" : "(remove by clicking ×)"}`;
-  box.appendChild(head);
-
-  [...matchPairs.entries()].forEach(([l,r])=>{
-    const row = document.createElement("div");
-    row.className = "pairRow";
-
-    const left = document.createElement("div");
-    left.textContent = l;
-
-    const right = document.createElement("div");
-    right.textContent = r;
-
-    const x = document.createElement("button");
-    x.className = "tokenX";
-    x.type="button";
-    x.textContent = "×";
-    x.addEventListener("click", ()=>{
-      // unmark buttons
-      matchPairs.delete(l);
-      const colL = outer.querySelectorAll(".matchCol")[0];
-      const colR = outer.querySelectorAll(".matchCol")[1];
-      [...colL.querySelectorAll(".matchBtn")].forEach(b=>{
-        if(b.textContent===l){ b.classList.remove("done"); }
-      });
-      [...colR.querySelectorAll(".matchBtn")].forEach(b=>{
-        if(b.textContent===r){ b.classList.remove("done"); }
-      });
-      renderPairsBox(outer);
-    });
-
-    row.appendChild(left);
-    row.appendChild(right);
-    row.appendChild(x);
-    box.appendChild(row);
-  });
-}
-
-function renderInteractionByType(q){
-  clearInteractionState();
-
-  const t = String(q.type || q.q_type || "").trim();
-
-  if(/^q[_-]?type[_-]?6/i.test(t) || /^qtype6/i.test(t)){
-    renderInput(q);
-    return;
-  }
-  if(/^q[_-]?type[_-]?4/i.test(t) || /^qtype4/i.test(t)){
-    renderReorder(q, false);
-    return;
-  }
-  if(/^q[_-]?type[_-]?5/i.test(t) || /^qtype5/i.test(t)){
-    renderReorder(q, true);
-    return;
-  }
-  if(/^q[_-]?type[_-]?8/i.test(t) || /^qtype8/i.test(t)){
-    renderMatching(q);
-    return;
-  }
-
-  // q_type_7 is MCQ logic (blank) -> renderChoices
-  // q_type_1 listen-only -> renderChoices (no shuffle handled inside)
-  // q_type_2/3 -> renderChoices
-  renderChoicesMCQ(q);
-}
-
-function checkAnswerByType(q){
-  const t = String(q.type || q.q_type || "").trim();
-
-  if(/^q[_-]?type[_-]?6/i.test(t) || /^qtype6/i.test(t)){
-    return checkInputStrict(inputEl ? inputEl.value : "", q.choices_text || "");
-  }
-
-  if(/^q[_-]?type[_-]?4/i.test(t) || /^qtype4/i.test(t)){
-    if(reorderAnswer.length !== reorderCorrect.length) return false;
-    for(let i=0;i<reorderCorrect.length;i++){
-      if(reorderAnswer[i] !== reorderCorrect[i]) return false;
-    }
-    return true;
-  }
-
-  if(/^q[_-]?type[_-]?5/i.test(t) || /^qtype5/i.test(t)){
-    if(reorderAnswer.length !== reorderCorrect.length) return false;
-    for(let i=0;i<reorderCorrect.length;i++){
-      if(reorderAnswer[i] !== reorderCorrect[i]) return false;
-    }
-    return true;
-  }
-
-  if(/^q[_-]?type[_-]?8/i.test(t) || /^qtype8/i.test(t)){
-    if(matchPairs.size !== matchMap.size) return false;
-    for(const [l,r] of matchMap.entries()){
-      if(matchPairs.get(l) !== r) return false;
-    }
-    return true;
-  }
-
-  // default MCQ
-  return (selectedIndex !== null) && (selectedIndex === correctIndexNow);
-}
-
-
-
-/* ========= Audio ========= */
+function getQId(q, i){ return (q.q_id||q.id||q.question_id||"").trim() || `${setId}__${i+1}`; }
+
+/* Normalise type string → match against known patterns */
+function getQType(q){ return String(q.type||q.q_type||"").trim().toLowerCase(); }
+function isType(qt, n){ return qt.includes(`_${n}_`) || qt.endsWith(`_${n}`) || qt === String(n); }
+
+/* =============================================
+   AUDIO
+   ============================================= */
 const audio = new Audio();
-audio.preload = "auto";
-audio.loop = true;
-
-const SFX = {
-  pin: new Audio("assets/ui/audio/sfx_pin.mp3"),
-  bu:  new Audio("assets/ui/audio/sfx_bu.mp3"),
-};
-
-function showPlayState(isPlaying){
-  document.getElementById("playBtn").style.display  = isPlaying ? "none" : "block";
-  document.getElementById("pauseBtn").style.display = isPlaying ? "block" : "none";
+audio.preload = "auto"; audio.loop = true;
+const SFX = { pin: new Audio("assets/ui/audio/sfx_pin.mp3"), bu: new Audio("assets/ui/audio/sfx_bu.mp3") };
+function showPlayState(p){
+  document.getElementById("playBtn").style.display = p ? "none" : "block";
+  document.getElementById("pauseBtn").style.display = p ? "block" : "none";
 }
-document.getElementById("playBtn").addEventListener("click", async ()=>{
-  try{ await audio.play(); showPlayState(true); }catch(e){}
-});
-document.getElementById("pauseBtn").addEventListener("click", ()=>{
-  audio.pause(); showPlayState(false);
-});
+document.getElementById("playBtn").addEventListener("click", async () => { try{ await audio.play(); showPlayState(true); }catch(e){} });
+document.getElementById("pauseBtn").addEventListener("click", () => { audio.pause(); showPlayState(false); });
 
-/* ========= UI toggles ========= */
+/* =============================================
+   UI LANGUAGE TOGGLE
+   ============================================= */
 function setUiMode(next){
   uiMode = next;
   document.getElementById("uiEn").classList.toggle("on", uiMode==="en");
   document.getElementById("uiJa").classList.toggle("on", uiMode==="ja");
   renderInstOnly();
 }
-document.getElementById("uiEn").addEventListener("click", ()=>setUiMode("en"));
-document.getElementById("uiJa").addEventListener("click", ()=>setUiMode("ja"));
+document.getElementById("uiEn").addEventListener("click", () => setUiMode("en"));
+document.getElementById("uiJa").addEventListener("click", () => setUiMode("ja"));
 
-/* ========= Script sheet ========= */
+/* =============================================
+   SCRIPT SHEET
+   ============================================= */
 const sheet = document.getElementById("sheet");
 const qaScript = document.getElementById("qaScript");
 const panelScript = document.getElementById("panelScript");
-
-function openSheet(){
-  if(qaScript.classList.contains("disabled")) return;
-  sheet.classList.add("show");
-}
+function openSheet(){ if(qaScript.classList.contains("disabled")) return; sheet.classList.add("show"); }
 function closeSheet(){ sheet.classList.remove("show"); }
-
 document.getElementById("sheetExitBtn").addEventListener("click", closeSheet);
 qaScript.addEventListener("click", openSheet);
 panelScript.addEventListener("click", openSheet);
 
-/* ========= Save toggles ========= */
+/* =============================================
+   SAVE TOGGLE
+   ============================================= */
 function syncSaveUI(){
-  const q = items[idx];
-  const qid = q ? q.__qid : "";
+  const q = items[idx]; const qid = q ? q.__qid : "";
   const on = !!qid && isSavedQ(setId, qid);
   document.getElementById("qaSave").classList.toggle("on", on);
   document.getElementById("panelSave").classList.toggle("on", on);
   document.getElementById("panelSaveText").textContent = on ? "Saved" : "Save";
 }
-function toggleSave(){
-  const q = items[idx];
-  if(!q) return;
-  toggleSavedQ(setId, q.__qid);
-  syncSaveUI();
-}
+function toggleSave(){ const q = items[idx]; if(!q) return; toggleSavedQ(setId, q.__qid); syncSaveUI(); }
 document.getElementById("qaSave").addEventListener("click", toggleSave);
 document.getElementById("panelSave").addEventListener("click", toggleSave);
 
-/* ========= Exit confirm bar ========= */
+/* =============================================
+   EXIT BAR
+   ============================================= */
 const exitBar = document.getElementById("exitBar");
 function showExitBar(on){ exitBar.classList.toggle("show", !!on); }
-document.getElementById("exitBtn").addEventListener("click", ()=>{
-  showExitBar(!exitBar.classList.contains("show"));
-});
-document.getElementById("exitContinue").addEventListener("click", ()=> showExitBar(false));
-document.getElementById("exitQuit").addEventListener("click", ()=>{
-  saveLastResult();              // ✅ so result shows real percent even on quit
-  location.href = "result.html";
-});
+document.getElementById("exitBtn").addEventListener("click", () => showExitBar(!exitBar.classList.contains("show")));
+document.getElementById("exitContinue").addEventListener("click", () => showExitBar(false));
+document.getElementById("exitQuit").addEventListener("click", () => { saveLastResult(); location.href = "result.html"; });
 
-/* ========= Result overlay ========= */
+/* =============================================
+   RESULT OVERLAY
+   ============================================= */
 const overlay = document.getElementById("overlay");
 const resultPanel = document.getElementById("resultPanel");
 
-/* ========= Keep-going modal ========= */
+/* =============================================
+   KEEP-GOING MODAL
+   ============================================= */
 const keepGoingModal = document.getElementById("keepGoingModal");
 const keepGoingImg = document.getElementById("keepGoingImg");
 const keepGoingFallback = document.getElementById("keepGoingFallback");
 if(keepGoingImg){
-  keepGoingImg.addEventListener("error", ()=>{
-    if(keepGoingFallback) keepGoingFallback.style.display = "block";
-  });
+  keepGoingImg.addEventListener("error", () => { if(keepGoingFallback) keepGoingFallback.style.display = "block"; });
 }
 function showKeepGoingModal(){
-  return new Promise((resolve)=>{
+  return new Promise(resolve => {
     if(!keepGoingModal){ resolve(); return; }
-    keepGoingModal.classList.add("show");
-    keepGoingModal.setAttribute("aria-hidden","false");
-    const close = ()=>{
-      keepGoingModal.classList.remove("show");
-      keepGoingModal.setAttribute("aria-hidden","true");
-      keepGoingModal.removeEventListener("click", close);
-      resolve();
+    keepGoingModal.classList.add("show"); keepGoingModal.setAttribute("aria-hidden","false");
+    const close = () => {
+      keepGoingModal.classList.remove("show"); keepGoingModal.setAttribute("aria-hidden","true");
+      keepGoingModal.removeEventListener("click", close); resolve();
     };
     keepGoingModal.addEventListener("click", close);
   });
 }
 
-function showResult(correct){
+function showResult(correct, correctAnswerHtml = ""){
   showExitBar(false);
   overlay.classList.remove("show");
-
-  overlay.style.background = correct
-    ? "rgba(120,190,255,.30)"
-    : "rgba(255,120,120,.26)";
-
+  overlay.style.background = correct ? "rgba(120,190,255,.30)" : "rgba(255,120,120,.26)";
   resultPanel.style.background = correct ? "#16384f" : "#3a1a1c";
-  resultPanel.style.borderColor = correct
-    ? "rgba(120,190,255,.65)"
-    : "rgba(255,120,120,.55)";
-
+  resultPanel.style.borderColor = correct ? "rgba(120,190,255,.65)" : "rgba(255,120,120,.55)";
   document.getElementById("resultMsg").src = correct
     ? "assets/ui/messages/message-result-pin.png"
     : "assets/ui/messages/message-result-bu.png";
 
-  try{
-    const s = correct ? SFX.pin : SFX.bu;
-    s.currentTime = 0;
-    s.play();
-  }catch(e){}
+  const caBox = document.getElementById("correctAnswerBox");
+  if(!correct && correctAnswerHtml){
+    document.getElementById("correctAnswerText").innerHTML = correctAnswerHtml;
+    caBox.classList.add("show");
+  } else {
+    caBox.classList.remove("show");
+  }
 
-  setTimeout(()=> overlay.classList.add("show"), 220);
+  try{ const s = correct ? SFX.pin : SFX.bu; s.currentTime = 0; s.play(); }catch(e){}
+  setTimeout(() => overlay.classList.add("show"), 220);
 }
-
 function hideResult(){ overlay.classList.remove("show"); }
 document.getElementById("overlayCloseBtn").addEventListener("click", hideResult);
 
-document.getElementById("continueBtn").addEventListener("click", async ()=>{
+document.getElementById("continueBtn").addEventListener("click", async () => {
   hideResult();
-
-  if(idx < items.length - 1){
-    idx++;
-    render();
-    return;
-  }
-
-  // End of round: loop wrongs until empty
+  if(idx < items.length - 1){ idx++; render(); return; }
   if(remainingWrong.size > 0){
-    if(roundNum === 1 && !keepGoingShown){
-      keepGoingShown = true;
-      await showKeepGoingModal();
-    }
-
+    if(roundNum === 1 && !keepGoingShown){ keepGoingShown = true; await showKeepGoingModal(); }
     roundNum += 1;
     const wrongIds = Array.from(remainingWrong);
-
-    items = wrongIds.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
-    idx = 0;
-    render();
-    return;
+    items = wrongIds.map(id => allItems.find(q => q.__qid === id)).filter(Boolean);
+    idx = 0; render(); return;
   }
-
-  // mastered all
   score = allItems.length;
-  persistWrong();
-  saveLastResult();
+  persistWrong(); saveLastResult();
   location.href = "result.html";
 });
 
-/* ========= Rendering ========= */
-function getInstText(qType){
-  const key = `${uiMode}|${qType}`;
+/* =============================================
+   RENDER HELPERS
+   ============================================= */
+function getInstText(qt){
+  const key = `${uiMode}|${qt}`;
   const t = uiTextMap.get(key);
   if(t) return t;
-  return (uiMode==="ja") ? "聞きましょう。" : "Listen";
+  return uiMode === "ja" ? "聞きましょう。" : "Listen";
 }
 
 function renderImages(imageFiles){
   const grid = document.getElementById("imgGrid");
   grid.innerHTML = "";
-  const parts = (imageFiles||"").split("|").map(s=>s.trim()).filter(Boolean);
-  if(parts.length===0){ grid.style.display="none"; return; }
-  grid.style.display="grid";
+  const parts = (imageFiles||"").split("|").map(s => s.trim()).filter(Boolean);
+  if(!parts.length){ grid.style.display = "none"; return; }
+  grid.style.display = "grid";
   for(const src of parts){
-    const card = document.createElement("div");
-    card.className="imgCard";
-    const img = document.createElement("img");
-    img.src = src;
-    img.alt = "";
-    card.appendChild(img);
-    grid.appendChild(card);
+    const card = document.createElement("div"); card.className = "imgCard";
+    const img = document.createElement("img"); img.src = src; img.alt = "";
+    card.appendChild(img); grid.appendChild(card);
   }
 }
 
-function renderChoices(q){
+function setScriptAvailability(has){
+  qaScript.classList.toggle("disabled", !has);
+  panelScript.style.opacity = has ? "1" : ".28";
+  panelScript.style.pointerEvents = has ? "auto" : "none";
+}
+
+function renderScriptBoxes(q){
+  const jaRaw = (q.script_ja||"").trim(), enRaw = (q.script_en||"").trim();
+  const jaEl = document.getElementById("scriptJa"), enEl = document.getElementById("scriptEn");
+  const colsEl = document.getElementById("scriptCols");
+  const hasJa = jaRaw.length > 0, hasEn = enRaw.length > 0;
+  jaEl.classList.toggle("hidden", !hasJa); enEl.classList.toggle("hidden", !hasEn);
+  if(hasJa) jaEl.innerHTML = miniMarkupToHTML(jaRaw);
+  if(hasEn) enEl.innerHTML = miniMarkupToHTML(enRaw);
+  colsEl.classList.toggle("oneCol", (hasJa&&!hasEn)||(!hasJa&&hasEn));
+  setScriptAvailability(hasJa || hasEn);
+  if(sheet.classList.contains("show") && !(hasJa||hasEn)) sheet.classList.remove("show");
+}
+
+function renderInstOnly(){
+  const q = items[idx]; if(!q) return;
+  document.getElementById("instText").innerHTML = miniMarkupToHTML(getInstText(getQType(q)));
+}
+
+function hideAllInputAreas(){
+  document.getElementById("inputArea").classList.remove("show");
+  document.getElementById("reorderArea").classList.remove("show");
+  document.getElementById("matchArea").classList.remove("show");
+  document.getElementById("choices").innerHTML = "";
+  document.getElementById("choices").style.display = "";
+}
+
+/* =============================================
+   TYPE 1, 2, 3, 7 — MCQ
+   ============================================= */
+function renderMCQ(q){
+  document.getElementById("choices").style.display = "";
   const wrap = document.getElementById("choices");
   wrap.innerHTML = "";
-  selectedIndex = null;
+  mcqSelectedIndex = null;
 
-  const rawParts = (q.choices_text || "").split("|").map(v => v.trim()).filter(Boolean);
+  const rawParts = (q.choices_text||"").split("|").map(v => v.trim()).filter(Boolean);
   const pairs = rawParts.map((text, origIdx) => ({ text, origIdx }));
 
-  // Detect "listen-only type 1" robustly (use either column name)
-  const qtRaw = String((q.type || q.q_type || "")).trim();
-  const noShuffle =
-    /^1$/.test(qtRaw) ||
-    /^1\b/.test(qtRaw) ||
-    /^q[_-]?type[_-]?1$/i.test(qtRaw) ||
-    /^qtype1$/i.test(qtRaw);
-
+  const qt = getQType(q);
+  const noShuffle = isType(qt, 1);
   const shown = noShuffle ? pairs : shuffle(pairs);
 
-  // Answer index: support 0-based and 1-based CSV
-  let correctOrig = parseInt(q.answer_index || "0", 10);
+  let correctOrig = parseInt(q.answer_index||"0", 10);
   if(!Number.isFinite(correctOrig)) correctOrig = 0;
-  if(correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0"){
-    correctOrig = correctOrig - 1;
-  }
-  correctIndexNow = shown.findIndex(p => p.origIdx === correctOrig);
+  if(correctOrig >= 1 && correctOrig <= pairs.length && String(q.answer_index).trim() !== "0") correctOrig--;
+  mcqCorrectIndex = shown.findIndex(p => p.origIdx === correctOrig);
 
-  const long = shown.some(p => (p.text || "").length > 22);
+  const long = shown.some(p => (p.text||"").length > 22);
   wrap.classList.toggle("twoCol", !long);
 
   shown.forEach((p, i) => {
-    const b = document.createElement("button");
-    b.className = "choiceBtn";
+    const b = document.createElement("button"); b.className = "choiceBtn";
     b.innerHTML = miniMarkupToHTML(p.text);
     b.addEventListener("click", () => {
-      selectedIndex = i;
+      mcqSelectedIndex = i;
       [...wrap.children].forEach(el => el.classList.remove("active"));
       b.classList.add("active");
     });
@@ -1588,92 +919,485 @@ function renderChoices(q){
   });
 }
 
-function renderInstOnly
-(){
-  const q = items[idx];
-  if(!q) return;
-  document.getElementById("instText").innerHTML = miniMarkupToHTML(getInstText(q.type));
+function checkMCQ(q){
+  if(mcqSelectedIndex === null) return false; // nothing selected
+  const ok = mcqSelectedIndex === mcqCorrectIndex;
+  const qid = q.__qid;
+  if(ok && remainingWrong.has(qid)) score++;
+  if(ok) remainingWrong.delete(qid); else remainingWrong.add(qid);
+  persistWrong(); saveLastResult();
+  showResult(ok, "");
+  return true;
 }
 
-function setScriptAvailability(hasAny){
-  qaScript.classList.toggle("disabled", !hasAny);
-  panelScript.style.opacity = hasAny ? "1" : ".28";
-  panelScript.style.pointerEvents = hasAny ? "auto" : "none";
+/* =============================================
+   TYPE 6 — TEXT INPUT
+   ============================================= */
+function renderInput(q){
+  document.getElementById("inputArea").classList.add("show");
+  const field = document.getElementById("inputField");
+  field.value = "";
+
+  // Hint: don't reveal answers, just guide on accepted formats
+  const hint = uiMode === "ja"
+    ? "ひらがな・漢字・ローマ字、どれでもOK！"
+    : "Type in hiragana, kanji, or romaji — all accepted!";
+  document.getElementById("inputHint").textContent = hint;
+
+  // Focus with slight delay (avoids keyboard jump on iOS)
+  setTimeout(() => {
+    try { field.focus(); } catch(e){}
+  }, 300);
+
+  field.onkeydown = (e) => {
+    if(e.key === "Enter"){ e.preventDefault(); document.getElementById("checkBtn").click(); }
+  };
 }
 
-function renderScriptBoxes(q){
-  const jaRaw = (q.script_ja || "").trim();
-  const enRaw = (q.script_en || "").trim();
+/* =============================================
+   ROMAJI MATCHING
+   
+   Rules (per spec):
+   - Case insensitive, spaces ignored
+   - Long vowel macrons accepted as alternatives:
+       ā ↔ aa,  ī ↔ ii,  ū ↔ uu,  ē ↔ ei
+       ō ↔ oo   (e.g. ookii ↔ ōkii)
+       ō ↔ ou   (e.g. toukyou ↔ tōkyō)
+   - CRITICAL: ou and oo are NOT interchangeable.
+       ookii → ōkii ✓  but  oukii → ookii ✗
+   
+   Strategy:
+   - Expand user input: replace macrons with their doubled-vowel equivalents.
+     ō is ambiguous (could be oo or ou), so generate BOTH variants.
+   - Then compare each expanded user variant against the CSV candidate
+     (also expanded the same way, to handle CSV entries with macrons).
+   ============================================= */
 
-  const jaEl = document.getElementById("scriptJa");
-  const enEl = document.getElementById("scriptEn");
-  const colsEl = document.getElementById("scriptCols");
+// Expand one string into all doubled-vowel forms
+// (handles ō ambiguity by branching into oo and ou variants)
+function expandRomaji(raw){
+  // Step 1: lowercase, strip spaces, convert unambiguous macrons
+  let base = (raw||"").toLowerCase().replace(/\s+/g, "")
+    .replace(/ā/g, "aa")
+    .replace(/ī/g, "ii")
+    .replace(/ū/g, "uu")
+    .replace(/ē/g, "ei");
+  // Step 2: ō is ambiguous → branch into oo and ou recursively
+  const variants = new Set();
+  function branch(s){
+    const i = s.indexOf("ō");
+    if(i < 0){ variants.add(s); return; }
+    branch(s.slice(0, i) + "oo" + s.slice(i + 1));
+    branch(s.slice(0, i) + "ou" + s.slice(i + 1));
+  }
+  branch(base);
+  return variants;
+}
 
-  const hasJa = jaRaw.length > 0;
-  const hasEn = enRaw.length > 0;
+// Returns true if userRaw matches csvCandidate under the romaji rules
+function romajiMatch(userRaw, csvCandidate){
+  const userForms = expandRomaji(userRaw);
+  const csvForms  = expandRomaji(csvCandidate);
+  for(const u of userForms){
+    if(csvForms.has(u)) return true;
+  }
+  return false;
+}
 
-  jaEl.classList.toggle("hidden", !hasJa);
-  enEl.classList.toggle("hidden", !hasEn);
+// Simple normalize for hiragana/kanji: lowercase + strip spaces
+function normalize(s){ return (s||"").toLowerCase().replace(/\s+/g, ""); }
 
-  if(hasJa) jaEl.innerHTML = miniMarkupToHTML(jaRaw);
-  if(hasEn) enEl.innerHTML = miniMarkupToHTML(enRaw);
+function checkInput(q){
+  const raw = document.getElementById("inputField").value.trim();
+  if(!raw) return;
 
-  colsEl.classList.toggle("oneCol", (hasJa && !hasEn) || (!hasJa && hasEn));
-  setScriptAvailability(hasJa || hasEn);
+  const parts = (q.choices_text||"").split("|").map(s => s.trim()).filter(Boolean);
 
-  if(sheet.classList.contains("show") && !(hasJa || hasEn)){
-    sheet.classList.remove("show");
+  // Detect romaji: ASCII letters + macron vowel chars only
+  const romajiRe = /^[a-zA-Zāīūēō\s\-']+$/;
+  const userIsRomaji = romajiRe.test(raw);
+
+  const ok = parts.some(candidate => {
+    if(userIsRomaji && romajiRe.test(candidate)){
+      return romajiMatch(raw, candidate);
+    }
+    // Hiragana / kanji: case+space insensitive exact match
+    return normalize(raw) === normalize(candidate);
+  });
+
+  const qid = q.__qid;
+  if(ok && remainingWrong.has(qid)) score++;
+  if(ok) remainingWrong.delete(qid); else remainingWrong.add(qid);
+  persistWrong(); saveLastResult();
+  const correctHtml = ok ? "" : parts.map(p => `<strong>${escapeHTML(p)}</strong>`).join(" / ");
+  showResult(ok, correctHtml);
+}
+   TYPE 4/5 — REORDER
+   choices_text (type 4) or image_files (type 5) pipe-delimited;
+   correct order = CSV order; user taps chips into answer zone.
+   In-answer zone: tap to remove, drag to reorder (desktop).
+   ============================================= */
+function renderReorder(q){
+  document.getElementById("reorderArea").classList.add("show");
+
+  const qt = getQType(q);
+  const isImg = isType(qt, 5) || qt.includes("image");
+  const raw = isImg ? (q.image_files||"") : (q.choices_text||"");
+  const parts = raw.split("|").map(s => s.trim()).filter(Boolean);
+
+  reorderCorrect = [...parts];
+
+  const answerEl = document.getElementById("reorderAnswer");
+  const bankEl   = document.getElementById("reorderBank");
+  answerEl.innerHTML = "";
+  bankEl.innerHTML   = "";
+
+  // Localise labels
+  document.getElementById("reorderAnswerLabel").textContent = uiMode==="ja" ? "答え" : "Answer";
+  document.getElementById("reorderBankLabel").textContent   = uiMode==="ja" ? "選択肢" : "Choices";
+
+  const bankOrder = shuffle([...parts]);
+
+  function makeChip(value){
+    const chip = document.createElement("div");
+    chip.className = "reorderChip";
+    chip.dataset.value = value;
+    chip.draggable = true;
+    if(isImg){
+      const img = document.createElement("img"); img.src = value; img.alt = ""; chip.appendChild(img);
+    } else {
+      chip.innerHTML = miniMarkupToHTML(value);
+    }
+    return chip;
+  }
+
+  // Place all chips in bank first
+  for(const val of bankOrder){
+    const chip = makeChip(val);
+    // Click: move between bank ↔ answer zone (skip if a touch-drag just finished)
+    chip.addEventListener("click", () => {
+      if(touchDragChip) return; // mid-drag, ignore
+      if(chip.parentElement === answerEl){
+        chip.classList.remove("inAnswer");
+        bankEl.appendChild(chip);
+      } else {
+        chip.classList.add("inAnswer");
+        answerEl.appendChild(chip);
+      }
+    });
+    bankEl.appendChild(chip);
+  }
+
+  // Drag-to-reorder within answerEl — supports both mouse (desktop) and touch (mobile)
+  let dragSrc = null;
+
+  // ---- Mouse / pointer drag (desktop) ----
+  answerEl.addEventListener("dragstart", e => {
+    dragSrc = e.target.closest(".reorderChip");
+    if(dragSrc){ e.dataTransfer.effectAllowed = "move"; dragSrc.style.opacity = ".45"; }
+  });
+  answerEl.addEventListener("dragend", () => {
+    if(dragSrc){ dragSrc.style.opacity = ""; dragSrc = null; }
+  });
+  answerEl.addEventListener("dragover", e => {
+    e.preventDefault();
+    answerEl.classList.add("dragOver");
+    const target = e.target.closest(".reorderChip");
+    if(target && target !== dragSrc){
+      const rect = target.getBoundingClientRect();
+      const before = e.clientX < rect.left + rect.width / 2;
+      if(before) answerEl.insertBefore(dragSrc, target);
+      else        answerEl.insertBefore(dragSrc, target.nextSibling);
+    }
+  });
+  answerEl.addEventListener("dragleave", () => answerEl.classList.remove("dragOver"));
+  answerEl.addEventListener("drop", e => { e.preventDefault(); answerEl.classList.remove("dragOver"); });
+
+  // ---- Touch drag (mobile) ----
+  // We use a ghost element that follows the finger
+  let touchDragChip = null;
+  let touchGhost    = null;
+
+  function touchDragStart(chip, e){
+    if(chip.parentElement !== answerEl) return; // only drag chips already in answer zone
+    e.preventDefault();
+    touchDragChip = chip;
+    chip.style.opacity = ".45";
+
+    // Create ghost
+    const ghost = chip.cloneNode(true);
+    ghost.style.cssText = `
+      position:fixed; pointer-events:none; z-index:999;
+      opacity:.85; transform:scale(1.06);
+      transition:none;
+    `;
+    const rect = chip.getBoundingClientRect();
+    ghost.style.width  = rect.width  + "px";
+    ghost.style.height = rect.height + "px";
+    ghost.style.left   = rect.left   + "px";
+    ghost.style.top    = rect.top    + "px";
+    document.body.appendChild(ghost);
+    touchGhost = ghost;
+  }
+
+  function touchDragMove(e){
+    if(!touchDragChip || !touchGhost) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const gw = parseFloat(touchGhost.style.width);
+    const gh = parseFloat(touchGhost.style.height);
+    touchGhost.style.left = (t.clientX - gw / 2) + "px";
+    touchGhost.style.top  = (t.clientY - gh / 2) + "px";
+
+    // Find chip under finger (excluding ghost & dragSrc)
+    touchGhost.style.display = "none";
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    touchGhost.style.display = "";
+    const target = el && el.closest(".reorderChip");
+    if(target && target !== touchDragChip && target.parentElement === answerEl){
+      const rect = target.getBoundingClientRect();
+      const before = t.clientX < rect.left + rect.width / 2;
+      if(before) answerEl.insertBefore(touchDragChip, target);
+      else        answerEl.insertBefore(touchDragChip, target.nextSibling);
+    }
+  }
+
+  function touchDragEnd(){
+    if(!touchDragChip) return;
+    touchDragChip.style.opacity = "";
+    touchDragChip = null;
+    if(touchGhost){ touchGhost.remove(); touchGhost = null; }
+  }
+
+  // Attach touch events to each chip in the answer zone via delegation on answerEl
+  answerEl.addEventListener("touchstart", e => {
+    const chip = e.target.closest(".reorderChip");
+    if(chip && chip.parentElement === answerEl) touchDragStart(chip, e);
+  }, { passive: false });
+  document.addEventListener("touchmove",  touchDragMove,  { passive: false });
+  document.addEventListener("touchend",   touchDragEnd,   { passive: true });
+  document.addEventListener("touchcancel",touchDragEnd,   { passive: true });
+}
+
+function checkReorder(q){
+  const answerEl = document.getElementById("reorderAnswer");
+  const chips = [...answerEl.querySelectorAll(".reorderChip")];
+  if(!chips.length || chips.length < reorderCorrect.length) return; // incomplete
+
+  const userOrder = chips.map(c => c.dataset.value);
+  const ok = userOrder.every((v, i) => v === reorderCorrect[i]);
+
+  const qid = q.__qid;
+  if(ok && remainingWrong.has(qid)) score++;
+  if(ok) remainingWrong.delete(qid); else remainingWrong.add(qid);
+  persistWrong(); saveLastResult();
+
+  const qt = getQType(q);
+  const isImg = isType(qt, 5) || qt.includes("image");
+  let correctHtml = "";
+  if(!ok){
+    if(isImg){
+      correctHtml = reorderCorrect
+        .map(src => `<img src="${escapeHTML(src)}" style="height:44px;border-radius:6px;margin:2px;vertical-align:middle;">`)
+        .join(" ");
+    } else {
+      correctHtml = reorderCorrect.map(v => `<strong>${miniMarkupToHTML(v)}</strong>`).join(" → ");
+    }
+  }
+  showResult(ok, correctHtml);
+}
+
+/* =============================================
+   TYPE 8 — MATCHING
+   choices_text = "left=right|left=right|…"
+   Tap one left + one right → check pair.
+   All correct pairs → auto-pass on final pair.
+   Any wrong pair flashes red, question marked wrong.
+   ============================================= */
+function renderMatching(q){
+  document.getElementById("matchArea").classList.add("show");
+
+  const rawPairs = (q.choices_text||"").split("|").map(s => s.trim()).filter(Boolean);
+  matchPairs = rawPairs.map(p => {
+    const eq = p.indexOf("=");
+    return eq >= 0 ? { left: p.slice(0, eq).trim(), right: p.slice(eq+1).trim() } : { left: p, right: p };
+  });
+
+  matchSelectedSide = null; matchSelectedIdx = null;
+  matchedCount = 0;
+
+  document.getElementById("matchStatus").textContent = "";
+
+  const leftEl  = document.getElementById("matchLeft");
+  const rightEl = document.getElementById("matchRight");
+  leftEl.innerHTML = ""; rightEl.innerHTML = "";
+
+  const rightShuffled = shuffle(matchPairs.map((p, i) => ({ ...p, origIdx: i })));
+
+  matchPairs.forEach((p, i) => {
+    const chip = document.createElement("div");
+    chip.className = "matchChip";
+    chip.innerHTML = miniMarkupToHTML(p.left);
+    chip.dataset.side = "left"; chip.dataset.idx = String(i);
+    chip.addEventListener("click", () => onMatchTap(chip, "left", i));
+    leftEl.appendChild(chip);
+  });
+
+  rightShuffled.forEach(p => {
+    const chip = document.createElement("div");
+    chip.className = "matchChip";
+    chip.innerHTML = miniMarkupToHTML(p.right);
+    chip.dataset.side = "right"; chip.dataset.idx = String(p.origIdx);
+    chip.addEventListener("click", () => onMatchTap(chip, "right", p.origIdx));
+    rightEl.appendChild(chip);
+  });
+}
+
+function getAllMatchChips(){
+  return [
+    ...document.getElementById("matchLeft").querySelectorAll(".matchChip"),
+    ...document.getElementById("matchRight").querySelectorAll(".matchChip")
+  ];
+}
+function clearMatchSelection(){
+  getAllMatchChips().forEach(c => {
+    if(!c.classList.contains("matchedCorrect") && !c.classList.contains("matchedWrong"))
+      c.classList.remove("selected");
+  });
+  matchSelectedSide = null; matchSelectedIdx = null;
+}
+function getMatchChipEl(side, idx){
+  const col = side === "left" ? document.getElementById("matchLeft") : document.getElementById("matchRight");
+  return col.querySelector(`[data-idx="${idx}"]`);
+}
+
+function onMatchTap(chip, side, idx){
+  if(chip.classList.contains("matchedCorrect")) return;
+  if(chip.classList.contains("matchedWrong")) return;
+
+  // If same side tapped: change selection
+  if(matchSelectedSide === side){
+    clearMatchSelection();
+    chip.classList.add("selected");
+    matchSelectedSide = side; matchSelectedIdx = idx;
+    return;
+  }
+
+  // First tap
+  if(!matchSelectedSide){
+    clearMatchSelection();
+    chip.classList.add("selected");
+    matchSelectedSide = side; matchSelectedIdx = idx;
+    return;
+  }
+
+  // Second tap on opposite side — evaluate pair
+  const leftIdx  = side === "right" ? matchSelectedIdx : idx;
+  const rightIdx = side === "right" ? idx : matchSelectedIdx;
+  const leftChip  = getMatchChipEl("left",  leftIdx);
+  const rightChip = getMatchChipEl("right", rightIdx);
+
+  clearMatchSelection();
+
+  const correct = (leftIdx === rightIdx); // pair is correct when indices match (right was shuffled by origIdx)
+
+  if(correct){
+    leftChip.classList.add("matchedCorrect");
+    rightChip.classList.add("matchedCorrect");
+    matchedCount++;
+
+    // Auto-finish when all matched — always correct
+    if(matchedCount === matchPairs.length){
+      finishMatching(items[idx], true);
+    }
+  } else {
+    // Wrong pair — flash briefly, user can retry freely
+    if(leftChip)  leftChip.classList.add("matchedWrong");
+    if(rightChip) rightChip.classList.add("matchedWrong");
+    document.getElementById("matchStatus").textContent =
+      uiMode === "ja" ? "不正解。もう一度！" : "Incorrect — try again!";
+    setTimeout(() => {
+      if(leftChip)  leftChip.classList.remove("matchedWrong");
+      if(rightChip) rightChip.classList.remove("matchedWrong");
+      document.getElementById("matchStatus").textContent = "";
+    }, 750);
   }
 }
+function idx_q(){ return idx; }
 
+function finishMatching(q, ok){
+  const qid = q.__qid;
+  if(ok && remainingWrong.has(qid)) score++;
+  if(ok) remainingWrong.delete(qid); else remainingWrong.add(qid);
+  persistWrong(); saveLastResult();
+  showResult(ok, "");
+}
+
+function checkMatching(q){
+  // Manual check press — correct only if all pairs matched
+  const ok = matchedCount === matchPairs.length;
+  finishMatching(q, ok);
+}
+
+/* =============================================
+   MAIN RENDER
+   ============================================= */
 function render(){
-  const q = items[idx];
-  if(!q) return;
+  const q = items[idx]; if(!q) return;
 
   showExitBar(false);
+  hideAllInputAreas();
 
   document.getElementById("qCount").textContent = `R${roundNum} • Q: ${idx+1}/${items.length}`;
   document.getElementById("scoreBox").textContent = `Score: ${score}/${allItems.length}`;
 
   renderInstOnly();
+  document.getElementById("promptJa").innerHTML = miniMarkupToHTML((q.prompt_ja||"").trim());
+  document.getElementById("promptEn").innerHTML = miniMarkupToHTML((q.prompt_en||"").trim());
 
-  document.getElementById("promptJa").innerHTML = miniMarkupToHTML((q.prompt_ja || "").trim());
-  document.getElementById("promptEn").innerHTML = miniMarkupToHTML((q.prompt_en || "").trim());
-
-  renderImages(q.image_files || "");
-
-  audio.src = q.audio_file || "";
-  audio.pause();
-  showPlayState(false);
-
-  renderInteractionByType(q);
+  audio.src = q.audio_file || ""; audio.pause(); showPlayState(false);
   renderScriptBoxes(q);
-
   syncSaveUI();
+
+  const qt = getQType(q);
+
+  if(isType(qt, 6) || qt === "q_type_6_input"){
+    renderImages(q.image_files||"");
+    renderInput(q);
+  } else if(isType(qt, 4) || qt === "q_type_4_reorder_text"){
+    renderImages(""); renderReorder(q);
+  } else if(isType(qt, 5) || qt === "q_type_5_reorder_image"){
+    renderImages(""); renderReorder(q);
+  } else if(isType(qt, 8) || qt === "q_type_8_matching"){
+    renderImages(q.image_files||""); renderMatching(q);
+  } else {
+    // Type 1, 2, 3, 7
+    renderImages(q.image_files||""); renderMCQ(q);
+  }
 }
 
-/* ========= Check ========= */
-document.getElementById("checkBtn").addEventListener("click", ()=>{
-  const q = items[idx];
-  if(!q) return;
+/* =============================================
+   CHECK BUTTON
+   ============================================= */
+document.getElementById("checkBtn").addEventListener("click", () => {
+  const q = items[idx]; if(!q) return;
+  const qt = getQType(q);
 
-  const qid = q.__qid;
-  const ok = checkAnswerByType(q);
-
-  // Score = unique mastered count
-  if(ok && remainingWrong.has(qid)) score += 1;
-
-  if(ok) remainingWrong.delete(qid);
-  else   remainingWrong.add(qid);
-
-  persistWrong();
-  saveLastResult();
-
-  showResult(ok);
+  if(isType(qt,6) || qt === "q_type_6_input"){
+    checkInput(q);
+  } else if(isType(qt,4) || qt==="q_type_4_reorder_text" || isType(qt,5) || qt==="q_type_5_reorder_image"){
+    checkReorder(q);
+  } else if(isType(qt,8) || qt === "q_type_8_matching"){
+    checkMatching(q);
+  } else {
+    checkMCQ(q);
+  }
 });
 
-/* ========= Keyboard ========= */
-document.addEventListener("keydown", (e)=>{
+/* =============================================
+   KEYBOARD SHORTCUTS
+   ============================================= */
+document.addEventListener("keydown", e => {
   if(e.key === "Escape"){
     overlay.classList.remove("show");
     sheet.classList.remove("show");
@@ -1681,81 +1405,45 @@ document.addEventListener("keydown", (e)=>{
   }
 });
 
-/* ========= Init ========= */
+/* =============================================
+   INIT
+   ============================================= */
 (async function init(){
-  if(!setId){
-    alert("Missing set_id.");
-    location.href = "menu.html";
-    return;
-  }
+  if(!setId){ alert("Missing set_id."); location.href = "menu.html"; return; }
 
   const qsCSV = await getCSV("questions");
-  if(!qsCSV){
-    alert("questions.csv not available. Open upload.html and upload CSV files.");
-    location.href = "upload.html";
-    return;
-  }
+  if(!qsCSV){ alert("questions.csv not available. Open upload.html and upload CSV files."); location.href = "upload.html"; return; }
 
   const uiCSV = await getCSV("ui");
-  if(uiCSV){
-    uiTextMap = buildUiTextMap(parseCSV(uiCSV));
-  }
+  if(uiCSV) uiTextMap = buildUiTextMap(parseCSV(uiCSV));
 
   const all = parseCSV(qsCSV);
   allItems = all.filter(r => r.set_id === setId);
-  allItems.forEach((q,i)=>{ q.__qid = getQId(q,i); });
+  allItems.forEach((q, i) => { q.__qid = getQId(q, i); });
   items = [...allItems];
-// Mode: review = load only wrong questions saved for this set
-if(mode === "review"){
-  const ids = getWrongIdsForSet(setId);
-  if(ids.length === 0){
-    alert("No wrong questions saved for this quiz yet.");
-    location.href = "menu.html";
-    return;
-  }
-  items = ids.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
-  roundNum = 1;
-  remainingWrong = new Set(ids);
-  score = 0;
-  saveLastResult();
-  persistWrong();
-  render();
-  return;
-}
 
-// Mode: saved = load only saved questions for this set
-if(mode === "saved"){
-  const ids = getSavedIdsForSet(setId);
-  if(ids.length === 0){
-    alert("No saved questions yet for this quiz.");
-    location.href = "menu.html";
-    return;
-  }
-  items = ids.map(id => allItems.find(q=>q.__qid===id)).filter(Boolean);
-  roundNum = 1;
-  remainingWrong = new Set(ids);
-  score = 0;
-  saveLastResult();
-  persistWrong();
-  render();
-  return;
-}
-
-
-
-  if(allItems.length === 0){
-    alert("No questions found for this set_id.");
-    location.href = "menu.html";
-    return;
+  if(mode === "review"){
+    const ids = getWrongIdsForSet(setId);
+    if(!ids.length){ alert("No wrong questions saved for this quiz yet."); location.href = "menu.html"; return; }
+    items = ids.map(id => allItems.find(q => q.__qid === id)).filter(Boolean);
+    roundNum = 1; remainingWrong = new Set(ids); score = 0;
+    saveLastResult(); persistWrong(); render(); return;
   }
 
-  // initialize last result (so even first open has correct total)
-  roundNum = 1;
-  remainingWrong = new Set(allItems.map(q=>q.__qid));
-  score = 0;
+  if(mode === "saved"){
+    const ids = getSavedIdsForSet(setId);
+    if(!ids.length){ alert("No saved questions yet for this quiz."); location.href = "menu.html"; return; }
+    items = ids.map(id => allItems.find(q => q.__qid === id)).filter(Boolean);
+    roundNum = 1; remainingWrong = new Set(ids); score = 0;
+    saveLastResult(); persistWrong(); render(); return;
+  }
 
-  saveLastResult();
-  persistWrong();
+  if(!allItems.length){ alert("No questions found for this set_id."); location.href = "menu.html"; return; }
+
+  roundNum = 1;
+  remainingWrong = new Set(allItems.map(q => q.__qid));
+  score = 0;
+  saveLastResult(); persistWrong();
   render();
 })();
 </script>
