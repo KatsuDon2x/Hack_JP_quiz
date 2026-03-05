@@ -290,6 +290,10 @@ function countUp(to, ms=900){
     requestAnimationFrame(tick);
 }
 
+/* ===== Applause audio ===== */
+const applause = new Audio("assets/ui/audio/sfx_applause.mp3");
+applause.preload = "auto";
+
 /* ===== Run animation sequence ===== */
 async function run(){
     nav.classList.add("show");
@@ -304,6 +308,13 @@ async function run(){
     scoreWrap.classList.add("show");
     await wait(140);
     countUp(pctFinal, 950);
+
+    // Play applause at the moment the score number starts counting up
+    try{
+        const applause = new Audio("assets/ui/audio/sfx_applause.mp3");
+        applause.volume = 0.75;
+        await applause.play();
+    } catch(e){}
 
     await wait(260);
     goodJob.classList.add("show");

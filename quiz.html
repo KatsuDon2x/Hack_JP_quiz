@@ -681,7 +681,7 @@ let reorderCorrect = [];
 // Matching state
 let matchPairs = [];
 let matchSelectedSide = null, matchSelectedIdx = null;
-let matchedCount = 0, matchWrongCount = 0;
+let matchedCount = 0;
 
 function saveLastResult(){
   localStorage.setItem(LS_LAST_SET, setId);
@@ -938,11 +938,10 @@ function renderInput(q){
   const field = document.getElementById("inputField");
   field.value = "";
 
-  const parts = (q.choices_text||"").split("|").map(s => s.trim()).filter(Boolean);
-  // Show hint: hiragana / kanji / romaji accepted
-  const hint = parts.length
-    ? (uiMode === "ja" ? `正解: ${parts.join(" / ")}` : `Accepted: ${parts.join(" / ")}`)
-    : (uiMode === "ja" ? "ひらがな・漢字・ローマ字で入力" : "Type in hiragana, kanji, or romaji");
+  // Hint: don't reveal answers, just guide on accepted formats
+  const hint = uiMode === "ja"
+    ? "ひらがな・漢字・ローマ字、どれでもOK！"
+    : "Type in hiragana, kanji, or romaji — all accepted!";
   document.getElementById("inputHint").textContent = hint;
 
   // Focus with slight delay (avoids keyboard jump on iOS)
@@ -1011,8 +1010,9 @@ function renderReorder(q){
   // Place all chips in bank first
   for(const val of bankOrder){
     const chip = makeChip(val);
-    // Click: move between bank ↔ answer zone
+    // Click: move between bank ↔ answer zone (skip if a touch-drag just finished)
     chip.addEventListener("click", () => {
+      if(touchDragChip) return; // mid-drag, ignore
       if(chip.parentElement === answerEl){
         chip.classList.remove("inAnswer");
         bankEl.appendChild(chip);
@@ -1024,11 +1024,13 @@ function renderReorder(q){
     bankEl.appendChild(chip);
   }
 
-  // Drag-to-reorder within answerEl (desktop / tablet)
+  // Drag-to-reorder within answerEl — supports both mouse (desktop) and touch (mobile)
   let dragSrc = null;
+
+  // ---- Mouse / pointer drag (desktop) ----
   answerEl.addEventListener("dragstart", e => {
     dragSrc = e.target.closest(".reorderChip");
-    if(dragSrc){ e.dataTransfer.effectAllowed = "move"; dragSrc.style.opacity = ".5"; }
+    if(dragSrc){ e.dataTransfer.effectAllowed = "move"; dragSrc.style.opacity = ".45"; }
   });
   answerEl.addEventListener("dragend", () => {
     if(dragSrc){ dragSrc.style.opacity = ""; dragSrc = null; }
@@ -1046,6 +1048,71 @@ function renderReorder(q){
   });
   answerEl.addEventListener("dragleave", () => answerEl.classList.remove("dragOver"));
   answerEl.addEventListener("drop", e => { e.preventDefault(); answerEl.classList.remove("dragOver"); });
+
+  // ---- Touch drag (mobile) ----
+  // We use a ghost element that follows the finger
+  let touchDragChip = null;
+  let touchGhost    = null;
+
+  function touchDragStart(chip, e){
+    if(chip.parentElement !== answerEl) return; // only drag chips already in answer zone
+    e.preventDefault();
+    touchDragChip = chip;
+    chip.style.opacity = ".45";
+
+    // Create ghost
+    const ghost = chip.cloneNode(true);
+    ghost.style.cssText = `
+      position:fixed; pointer-events:none; z-index:999;
+      opacity:.85; transform:scale(1.06);
+      transition:none;
+    `;
+    const rect = chip.getBoundingClientRect();
+    ghost.style.width  = rect.width  + "px";
+    ghost.style.height = rect.height + "px";
+    ghost.style.left   = rect.left   + "px";
+    ghost.style.top    = rect.top    + "px";
+    document.body.appendChild(ghost);
+    touchGhost = ghost;
+  }
+
+  function touchDragMove(e){
+    if(!touchDragChip || !touchGhost) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const gw = parseFloat(touchGhost.style.width);
+    const gh = parseFloat(touchGhost.style.height);
+    touchGhost.style.left = (t.clientX - gw / 2) + "px";
+    touchGhost.style.top  = (t.clientY - gh / 2) + "px";
+
+    // Find chip under finger (excluding ghost & dragSrc)
+    touchGhost.style.display = "none";
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    touchGhost.style.display = "";
+    const target = el && el.closest(".reorderChip");
+    if(target && target !== touchDragChip && target.parentElement === answerEl){
+      const rect = target.getBoundingClientRect();
+      const before = t.clientX < rect.left + rect.width / 2;
+      if(before) answerEl.insertBefore(touchDragChip, target);
+      else        answerEl.insertBefore(touchDragChip, target.nextSibling);
+    }
+  }
+
+  function touchDragEnd(){
+    if(!touchDragChip) return;
+    touchDragChip.style.opacity = "";
+    touchDragChip = null;
+    if(touchGhost){ touchGhost.remove(); touchGhost = null; }
+  }
+
+  // Attach touch events to each chip in the answer zone via delegation on answerEl
+  answerEl.addEventListener("touchstart", e => {
+    const chip = e.target.closest(".reorderChip");
+    if(chip && chip.parentElement === answerEl) touchDragStart(chip, e);
+  }, { passive: false });
+  document.addEventListener("touchmove",  touchDragMove,  { passive: false });
+  document.addEventListener("touchend",   touchDragEnd,   { passive: true });
+  document.addEventListener("touchcancel",touchDragEnd,   { passive: true });
 }
 
 function checkReorder(q){
@@ -1093,7 +1160,7 @@ function renderMatching(q){
   });
 
   matchSelectedSide = null; matchSelectedIdx = null;
-  matchedCount = 0; matchWrongCount = 0;
+  matchedCount = 0;
 
   document.getElementById("matchStatus").textContent = "";
 
@@ -1175,21 +1242,14 @@ function onMatchTap(chip, side, idx){
     rightChip.classList.add("matchedCorrect");
     matchedCount++;
 
-    // Auto-finish when all matched correctly
-    if(matchedCount === matchPairs.length && matchWrongCount === 0){
-      // All correct with no mistakes → trigger check automatically
-      const q = items[idx_q()];
-      finishMatching(q, true);
-    } else if(matchedCount === matchPairs.length){
-      // All matched, but had wrong attempts
-      const q = items[idx_q()];
-      finishMatching(q, false);
+    // Auto-finish when all matched — always correct
+    if(matchedCount === matchPairs.length){
+      finishMatching(items[idx], true);
     }
   } else {
-    // Wrong pair — flash briefly
+    // Wrong pair — flash briefly, user can retry freely
     if(leftChip)  leftChip.classList.add("matchedWrong");
     if(rightChip) rightChip.classList.add("matchedWrong");
-    matchWrongCount++;
     document.getElementById("matchStatus").textContent =
       uiMode === "ja" ? "不正解。もう一度！" : "Incorrect — try again!";
     setTimeout(() => {
@@ -1199,23 +1259,19 @@ function onMatchTap(chip, side, idx){
     }, 750);
   }
 }
-function idx_q(){ return idx; } // alias for clarity inside matching callback
+function idx_q(){ return idx; }
 
-function finishMatching(q, allPerfect){
-  const ok = allPerfect;
+function finishMatching(q, ok){
   const qid = q.__qid;
   if(ok && remainingWrong.has(qid)) score++;
   if(ok) remainingWrong.delete(qid); else remainingWrong.add(qid);
   persistWrong(); saveLastResult();
-  const correctHtml = ok ? "" : matchPairs
-    .map(p => `<strong>${miniMarkupToHTML(p.left)}</strong> ＝ ${miniMarkupToHTML(p.right)}`)
-    .join("<br>");
-  showResult(ok, correctHtml);
+  showResult(ok, "");
 }
 
 function checkMatching(q){
-  // Manual check press (user tapped the check button)
-  const ok = matchedCount === matchPairs.length && matchWrongCount === 0;
+  // Manual check press — correct only if all pairs matched
+  const ok = matchedCount === matchPairs.length;
   finishMatching(q, ok);
 }
 
