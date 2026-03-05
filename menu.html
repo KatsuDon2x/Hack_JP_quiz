@@ -553,15 +553,30 @@ details[open] > summary.topicHead{
         .replace(/\[\/rb\]/gi, "</rb>");
     }
 
-    /* ===== Data source (upload first, fallback to fetch) ===== */
+    /* ===== Data source (localStorage first → fetch fallback) ===== */
     const LS_SETS = "JPQ_SETS_CSV";
-    async function getSetsCSV(){
-      const uploaded = localStorage.getItem(LS_SETS);
-      if(uploaded) return uploaded;
+    const LS_QS   = "JPQ_QUESTIONS_CSV";
+    const LS_UI   = "JPQ_UI_TEXT_CSV";
 
-      const res = await fetch("data/sets.csv");
-      if(!res.ok) throw new Error("Cannot load data/sets.csv. Use upload.html on file://");
-      return await res.text();
+    async function fetchCSV(lsKey, path){
+      const uploaded = localStorage.getItem(lsKey);
+      if(uploaded) return uploaded;
+      const res = await fetch(path);
+      if(!res.ok) throw new Error(`Cannot load ${path}. Use upload.html on file://`);
+      const text = await res.text();
+      // Cache in localStorage so quiz.html can also use it
+      try{ localStorage.setItem(lsKey, text); }catch(e){}
+      return text;
+    }
+
+    async function getSetsCSV(){
+      return fetchCSV(LS_SETS, "data/sets.csv");
+    }
+
+    // Pre-load questions + ui_text into localStorage so quiz.html finds them
+    async function preloadSupportingCSVs(){
+      try{ await fetchCSV(LS_QS, "data/questions.csv"); }catch(e){ console.warn("questions.csv not available yet:", e); }
+      try{ await fetchCSV(LS_UI, "data/ui_text.csv"); }catch(e){ console.warn("ui_text.csv not available yet:", e); }
     }
 
     /* ===== Saved quiz sets (bookmark icon in menu) ===== */
@@ -861,7 +876,11 @@ details[open] > summary.topicHead{
         alert("Menu cannot load sets.csv.\n\nOpen upload.html first and upload CSV files.\n\n" + err);
         console.error(err);
         location.href = "upload.html";
+        return;
       }
+
+      // Pre-load questions.csv + ui_text.csv into localStorage in the background
+      preloadSupportingCSVs();
 
       window.addEventListener("focus", syncNavBadges);
     })();
