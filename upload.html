@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Upload</title>
+
+  <style>
+    html, body{
+      margin:0;
+      width:100%;
+      height:100%;
+      background:#000;
+      overflow:hidden;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color:#fff;
+    }
+
+    /* ===== Viewport ===== */
+    .viewport{
+      position:relative;
+      width:100vw;
+      height:100vh;
+      overflow:hidden;
+      background:#000;
+    }
+
+    /* ===== Poster-mode artboard (iPhone 12-ish) ===== */
+    .canvas{
+      position:absolute;
+      left:0;
+      top:0;
+      width:1170px;
+      height:2532px;
+
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+
+      transform-origin: top left;
+      transform: translate(0,0) scale(1);
+      box-sizing:border-box;
+    }
+
+    img{
+      display:block;
+      height:auto;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
+    /* ===== Top branding ===== */
+    .logo {
+      width: 700px;
+      margin-top: 120px;
+      transform: scale(0.75);
+      transform-origin: top center;
+    }
+
+    /* ===== Upload / Choose block ===== */
+    .csvUploadBtn{
+      width: 860px;
+      margin-top: 220px;
+      transform: scale(0.90);
+      transform-origin: top center;
+      cursor:pointer;
+    }
+
+    .chooseQuizBtn{
+      width: 860px;
+      transform: scale(0.90);
+      transform-origin: top center;
+      cursor:pointer;
+    }
+
+    /* spacing */
+    .smallSpace{ height: 5px; }
+    .largeSpace{ height: 100px; }
+
+    /* text hierarchy */
+    .csvAction{
+      margin-top: 4px;
+      font-size: 60px;
+      opacity: 0.58;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      user-select:none;
+      line-height: 1.05;
+    }
+    .csvAction:hover{ opacity: 0.82; }
+
+    .csvStatus{
+      width: 1040px;
+      text-align:center;
+      font-size: 44px;
+      opacity: 0.45;
+      margin-top: 6px;
+      letter-spacing: 0.01em;
+      user-select:none;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ===== Collage (RESTORED) ===== */
+    .collageWrap{
+      width: 1100px;
+      height: 600px;
+      margin-top: auto;
+      margin-bottom: 80px;
+
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      pointer-events:none;
+    }
+
+    .collage{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      object-position:center bottom;
+      opacity: .85;
+    }
+
+    input[type="file"]{ display:none; }
+  </style>
+</head>
+
+<body>
+  <div class="viewport">
+    <main class="canvas" id="canvas">
+
+      <img class="logo"
+        src="assets/ui/logos/logo-katsudon_entertainment_hack_quiz_logo.png"
+        alt="Logo" />
+
+       <img class="csvUploadBtn" id="csvUploadBtn"
+        src="assets/ui/buttons/button-csv_upload.png"
+        alt="Upload CSV" />
+
+      <div class="smallSpace"></div>
+
+      <div class="csvAction" id="removeCsv">remove uploaded CSVs</div>
+
+      <div class="csvStatus" id="csvStatus">Upload 0 files:</div>
+
+      <div class="largeSpace"></div>
+
+      <img class="chooseQuizBtn" id="chooseQuizBtn"
+        src="assets/ui/buttons/button-choose_a_quiz.png"
+        alt="Choose a quiz" />
+
+      <!-- collage restored -->
+      <div class="collageWrap" aria-hidden="true">
+        <img class="collage"
+          src="assets/ui/mood/image-collage-gifu.png"
+          alt="" />
+      </div>
+
+      <input type="file" id="fileInput" accept=".csv" multiple />
+
+    </main>
+  </div>
+
+  <script>
+const DESIGN_W = 1170;
+const DESIGN_H = 2532;
+const canvas = document.getElementById("canvas");
+
+function layout(){
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const s = Math.min(vw / DESIGN_W, vh / DESIGN_H);
+
+  const scaledW = DESIGN_W * s;
+  const scaledH = DESIGN_H * s;
+
+  const x = Math.round((vw - scaledW) / 2);
+  const extraY = (vh - scaledH);
+  const y = Math.round(Math.max(0, extraY * 0.10));
+
+  canvas.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+}
+window.addEventListener("resize", layout);
+layout();
+
+const LS_SETS = "JPQ_SETS_CSV";
+const LS_QS   = "JPQ_QUESTIONS_CSV";
+const LS_UI   = "JPQ_UI_TEXT_CSV";
+
+const csvBtn = document.getElementById("csvUploadBtn");
+const chooseBtn = document.getElementById("chooseQuizBtn");
+const removeCsv = document.getElementById("removeCsv");
+const fileInput = document.getElementById("fileInput");
+const csvStatus = document.getElementById("csvStatus");
+
+function guessKind(filename){
+  const name = (filename||"").toLowerCase();
+  if(name.includes("sets")) return "sets";
+  if(name.includes("question")) return "questions";
+  if(name.includes("ui")) return "ui";
+  return "unknown";
+}
+
+function setCSV(kind, text){
+  if(kind==="sets") localStorage.setItem(LS_SETS, text);
+  else if(kind==="questions") localStorage.setItem(LS_QS, text);
+  else if(kind==="ui") localStorage.setItem(LS_UI, text);
+}
+
+function clearCSVs(){
+  localStorage.removeItem(LS_SETS);
+  localStorage.removeItem(LS_QS);
+  localStorage.removeItem(LS_UI);
+}
+
+function getStatusLine(){
+  const hasSets = !!localStorage.getItem(LS_SETS);
+  const hasQs   = !!localStorage.getItem(LS_QS);
+  const hasUi   = !!localStorage.getItem(LS_UI);
+  return `Upload status: sets.csv=${hasSets?"✓":"—"}  questions.csv=${hasQs?"✓":"—"}  ui_text.csv=${hasUi?"✓":"—"}`;
+}
+
+function updateStatus(extra=""){
+  csvStatus.textContent = extra ? `${getStatusLine()} • ${extra}` : getStatusLine();
+}
+
+csvBtn.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", async () => {
+  const files = Array.from(fileInput.files || []);
+  if(files.length === 0) return;
+
+  // Read & store each file
+  const reads = files.map(f => new Promise((resolve)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve({ name:f.name, text: String(reader.result||"") });
+    reader.readAsText(f);
+  }));
+
+  const results = await Promise.all(reads);
+
+  const stored = [];
+  const unknown = [];
+
+  for(const r of results){
+    const kind = guessKind(r.name);
+    if(kind === "unknown") unknown.push(r.name);
+    else{
+      setCSV(kind, r.text);
+      stored.push(`${r.name}→${kind}`);
+    }
+  }
+
+  const msg = stored.length
+    ? `Saved: ${stored.join(", ")}`
+    : `No recognized CSV (name should include: sets / questions / ui).`;
+
+  updateStatus(msg + (unknown.length ? ` • Unknown: ${unknown.join(", ")}` : ""));
+});
+
+removeCsv.addEventListener("click", () => {
+  clearCSVs();
+  fileInput.value = "";
+  updateStatus("cleared");
+});
+
+chooseBtn.addEventListener("click", () => {
+  // Guard: questions.csv is required
+  if(!localStorage.getItem(LS_QS)){
+    alert("Please upload questions.csv first (and sets.csv is recommended).");
+    return;
+  }
+  location.href = "menu.html";
+});
+
+// Initial status
+updateStatus();
+</script>
+</body>
+</html>

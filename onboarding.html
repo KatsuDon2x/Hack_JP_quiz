@@ -174,7 +174,14 @@
     window.addEventListener("resize", layout);
     layout();
 
-    function goNext() { location.href = "upload.html"; }
+    function goNext() {
+      // Desktop版（file://）はupload.htmlへ、GitHub Pages（https://）はmenu.htmlへ
+      if(location.protocol === "file:"){
+        location.href = "upload.html";
+      } else {
+        location.href = "menu.html";
+      }
+    }
     document.getElementById("startBtn").addEventListener("click", goNext);
 
     document.addEventListener("keydown", (e) => {
