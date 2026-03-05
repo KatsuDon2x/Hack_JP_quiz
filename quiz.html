@@ -13,7 +13,547 @@
       --card:rgba(255,255,255,.08);
       --stroke:rgba(255,255,255,.14);
       --lime:#C8FF2E;
+      --red:#ff4d4d;<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dictation Quiz</title>
+
+  <style>
+    :root{
+      --bg:#000;
+      --fg:#fff;
+      --muted:rgba(255,255,255,.68);
+      --card:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.14);
+      --lime:#C8FF2E;
       --red:#ff4d4d;
+      --green:#22c55e;
+      --pad:18px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", sans-serif;
+    }
+    .wrap{ min-height:100%; display:flex; flex-direction:column; }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; border-bottom:1px solid var(--stroke);
+      background:rgba(0,0,0,.55); position:sticky; top:0;
+      backdrop-filter: blur(10px); z-index:5;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:999px;
+      background:var(--card); border:1px solid var(--stroke);
+      font-size:14px; color:var(--muted);
+    }
+    .pill strong{ color:var(--fg); font-weight:700; }
+
+    .btn{
+      border:1px solid var(--stroke);
+      background:var(--card);
+      color:var(--fg);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:hover{ border-color: rgba(200,255,46,.55); }
+    .btn-primary{
+      border-color: rgba(200,255,46,.55);
+      box-shadow: 0 0 0 2px rgba(200,255,46,.12) inset;
+    }
+    .btn-primary:hover{
+      box-shadow: 0 0 0 2px rgba(200,255,46,.20) inset, 0 0 18px rgba(200,255,46,.16);
+    }
+
+    .main{ flex:1; padding: var(--pad); display:flex; justify-content:center; }
+    .card{
+      width:min(760px, 100%);
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+    }
+
+    .progress{
+      height:10px; background:rgba(255,255,255,.08);
+      border:1px solid var(--stroke); border-radius:999px;
+      overflow:hidden; margin:10px 0 14px;
+    }
+    .progress > div{
+      height:100%; width:0%;
+      background: linear-gradient(90deg, var(--lime), rgba(200,255,46,.45));
+      transition: width .35s ease;
+    }
+
+    .q-title{ font-size:14px; color:var(--muted); margin:0 0 6px; }
+    .q-text{ font-size:22px; line-height:1.45; margin:0 0 14px; word-break:break-word; }
+
+    .media{ display:grid; grid-template-columns: 1fr; gap:12px; margin: 10px 0 14px; }
+    .media img{
+      width:100%; border-radius:16px; border:1px solid var(--stroke);
+      background:rgba(255,255,255,.03); display:block;
+    }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    .input{
+      width:100%; font-size:18px; padding:14px 14px;
+      border-radius:16px; border:1px solid var(--stroke);
+      background:rgba(255,255,255,.06); color:var(--fg); outline:none;
+    }
+    .input:focus{
+      border-color: rgba(200,255,46,.65);
+      box-shadow: 0 0 0 3px rgba(200,255,46,.12);
+    }
+
+    .hint{ margin-top:10px; color:var(--muted); font-size:14px; }
+    .hint .ans{ color: rgba(255,255,255,.9); }
+
+    .small{ font-size:12px; color:rgba(255,255,255,.5); margin-top:10px; }
+    .warn{ color: rgba(255,200,0,.9); }
+
+    /* ===== feedback overlay ===== */
+    .overlay{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      background:rgba(0,0,0,.86);
+      z-index:100;
+      padding:18px;
+    }
+    .overlay.show{ display:flex; }
+    .panel{
+      width:min(760px, 100%);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);
+      backdrop-filter: blur(10px);
+      box-shadow:0 18px 50px rgba(0,0,0,.55);
+      padding:16px;
+    }
+    .panelTop{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .panel img{
+      width:min(520px, 100%);
+      height:auto;
+      display:block;
+      margin:10px auto 12px;
+      user-select:none; -webkit-user-drag:none;
+    }
+    .panel .answerLine{
+      font-size:18px;
+      line-height:1.5;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(0,0,0,.35);
+      margin:0 0 12px;
+      word-break:break-word;
+    }
+    .panelBtns{ display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="pill"><span>Progress</span><strong id="counter">0/0</strong></div>
+      <div class="pill"><span>Score</span><strong id="score">0</strong></div>
+      <button class="btn" id="exitBtn">Exit</button>
+    </div>
+
+    <div class="main">
+      <div class="card">
+        <div class="progress"><div id="bar"></div></div>
+
+        <p class="q-title" id="setTitle">Dictation Quiz</p>
+        <p class="q-text" id="qText">Loading...</p>
+
+        <div class="media" id="media"></div>
+
+        <div class="row" style="margin-bottom:10px;">
+          <button class="btn btn-primary" id="playBtn">▶ Play</button>
+          <span class="small" id="playHint" style="display:none;">Playing (loop)</span>
+        </div>
+
+        <input class="input" id="answerInput" placeholder="Type what you heard…" autocomplete="off" />
+
+        <div class="row" style="margin-top:12px;">
+          <button class="btn btn-primary" id="checkBtn">Check</button>
+          <button class="btn" id="skipBtn">Skip</button>
+        </div>
+
+        <div class="hint" id="hint"></div>
+        <div class="small warn" id="audioWarn" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- feedback overlay -->
+  <div class="overlay" id="fbOverlay" aria-hidden="true">
+    <div class="panel">
+      <div class="panelTop">
+        <div class="pill"><span>Answer</span><strong id="fbStatus">OK</strong></div>
+        <button class="btn" id="fbClose">×</button>
+      </div>
+
+      <!-- ★ここが「正解・不正解のPNG」 -->
+      <img id="fbImg" src="" alt="feedback" />
+
+      <div class="answerLine" id="fbAnswer"></div>
+
+      <div class="panelBtns">
+        <button class="btn btn-primary" id="fbNext">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function stopVoice(){
+  try{
+    if(voice){
+      voice.pause();
+      voice.currentTime = 0;
+      voice.src = "";   // ← 古い音を確実に切る（重要）
+      voice.load?.();
+    }
+  }catch(e){}
+  isPlaying = false;
+  setPlayButton();
+}
+    
+    // ====== Result linkage ======
+    const RESULT_URL = "result.html";
+    const KEY_SET_ID = "JPQ_LAST_SET_ID";
+    const KEY_SCORE  = "JPQ_LAST_SCORE";
+    const KEY_TOTAL  = "JPQ_LAST_TOTAL";
+
+    // ====== Data path ======
+    const DEFAULT_DATA_PATH = "data/dictation.csv";
+    const CACHE_BUST = "v=" + Date.now();
+
+    // ====== repo base (/Hack_JP_quiz/) ======
+    const REPO_BASE = location.pathname.replace(/\/[^\/]*$/, "/");
+
+    // ====== SFX (your existing filenames) ======
+    const SFX = {
+      correct: REPO_BASE + "assets/ui/audio/sfx_pin.mp3",
+      wrong:   REPO_BASE + "assets/ui/audio/sfx_bu.mp3",
+      done:    REPO_BASE + "assets/ui/audio/sfx_applause.mp3",
+    };
+
+    // ====== Feedback PNG (CHANGE HERE if filenames differ) ======
+    const FEEDBACK_PNG = {
+      correct: REPO_BASE + "assets/ui/messages/message-result-pin.png",
+      wrong:   REPO_BASE + "assets/ui/messages/message-result-bu.png",
+    };
+
+    // ====== Audio unlock ======
+    let AUDIO_UNLOCKED = false;
+    function unlockAudioOnce(){
+      if (AUDIO_UNLOCKED) return;
+      AUDIO_UNLOCKED = true;
+      const a = new Audio();
+      a.src = "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAA==";
+      a.volume = 0;
+      a.play().catch(()=>{});
+    }
+    document.addEventListener("pointerdown", unlockAudioOnce, { once: true });
+
+    function playSfxByName(name){
+      unlockAudioOnce();
+      const src = SFX[name];
+      if(!src) return;
+      const a = new Audio(src);
+      a.volume = 0.95;
+      a.play().catch(()=>{});
+    }
+
+    // ====== Helpers ======
+    const $ = (id) => document.getElementById(id);
+    function getParam(name){
+      const u = new URL(location.href);
+      return u.searchParams.get(name);
+    }
+
+    function normalizeAnswer(s){
+      return (s ?? "")
+        .trim()
+        .replace(/\s+/g, "")
+        .replace(/[’‘]/g, "'")
+        .toLowerCase();
+    }
+
+    function escapeHtml(s){
+      return (s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    // ====== CSV parser ======
+    function parseCSV(text){
+      const rows = [];
+      let row = [], cur = "", inQ = false;
+      for(let i=0;i<text.length;i++){
+        const ch = text[i];
+        const next = text[i+1];
+
+        if(ch === '"' && inQ && next === '"'){ cur += '"'; i++; continue; }
+        if(ch === '"'){ inQ = !inQ; continue; }
+
+        if(ch === ',' && !inQ){ row.push(cur); cur = ""; continue; }
+        if((ch === '\n' || ch === '\r') && !inQ){
+          if(ch === '\r' && next === '\n') i++;
+          row.push(cur); cur = "";
+          if(row.some(c => (c ?? "").trim() !== "")) rows.push(row);
+          row = [];
+          continue;
+        }
+        cur += ch;
+      }
+      row.push(cur);
+      if(row.some(c => (c ?? "").trim() !== "")) rows.push(row);
+
+      if(rows.length === 0) return [];
+
+      const header = rows[0].map(h => (h ?? "").trim());
+      const out = [];
+      for(let r=1;r<rows.length;r++){
+        const obj = {};
+        for(let c=0;c<header.length;c++){
+          obj[header[c]] = (rows[r][c] ?? "").trim();
+        }
+        out.push(obj);
+      }
+      return out;
+    }
+
+    async function loadQuestions(dataPath){
+      const url = `${dataPath}?${CACHE_BUST}`;
+      const res = await fetch(url);
+      if(!res.ok) throw new Error("Failed to load data: " + url);
+      const text = await res.text();
+      const items = parseCSV(text);
+
+      const questions = items.map(x => ({
+        id: x.id || "",
+        prompt: x.prompt || "Listen",
+        answer: x.answer || "",
+        hint: x.hint || "",
+        img: x.img || "",
+        audio: x.audio || ""
+      }));
+
+      const bad = questions.filter(q => !q.answer || !q.audio);
+      if(bad.length){
+        $("audioWarn").style.display = "block";
+        $("audioWarn").textContent =
+          `⚠ CSVで answer か audio が空欄の行が ${bad.length} 件あります。その行はスキップされます。`;
+      }
+      return questions.filter(q => q.answer && q.audio);
+    }
+
+    // ====== State ======
+    let questions = [];
+    let idx = 0;
+    let score = 0;
+
+    // voice
+    let voice = null;
+    let isPlaying = false;
+
+    // feedback waiting
+    let waitingNext = false;
+
+    function updateHeader(){
+      $("counter").textContent = `${Math.min(idx+1, questions.length)}/${questions.length}`;
+      $("score").textContent = String(score);
+      const pct = questions.length ? (idx / questions.length) * 100 : 0;
+      $("bar").style.width = `${pct}%`;
+    }
+
+    function setPlayButton(){
+      $("playBtn").textContent = isPlaying ? "⏸ Pause" : "▶ Play";
+      $("playHint").style.display = isPlaying ? "inline" : "none";
+    }
+
+    function render(){
+      waitingNext = false;
+      updateHeader();
+
+      const q = questions[idx];
+      $("qText").textContent = q.prompt;
+      $("hint").innerHTML = q.hint ? `Hint: <span class="ans">${escapeHtml(q.hint)}</span>` : "";
+
+      const media = $("media");
+      media.innerHTML = "";
+      if(q.img){
+        const img = document.createElement("img");
+        img.src = q.img;
+        img.alt = "quiz image";
+        img.addEventListener("error", () => { img.remove(); });
+        media.appendChild(img);
+      }
+
+      // set audio
+      // set audio
+      stopVoice(); // ★ここ
+      voice = new Audio(q.audio);
+      voice.preload = "auto";
+      voice.volume = 1.0;
+      voice.loop = true;
+      voice = new Audio(q.audio);
+      voice.preload = "auto";
+      voice.volume = 1.0;
+      voice.loop = true; // ★押したら永遠にループ
+
+      // reset play state
+      try{ voice.pause(); }catch(e){}
+      isPlaying = false;
+      setPlayButton();
+
+      $("answerInput").value = "";
+      $("answerInput").focus();
+
+      $("setTitle").textContent = getParam("title") || "Dictation Quiz";
+    }
+
+    function openFeedback(ok, answerText){
+      stopVoice(); // ★正解/不正解を見せる時は音を止める
+      const ov = $("fbOverlay");
+      ov.classList.add("show");
+      ov.setAttribute("aria-hidden","false");
+
+      $("fbStatus").textContent = ok ? "OK" : "Try again";
+      $("fbImg").src = ok ? FEEDBACK_PNG.correct : FEEDBACK_PNG.wrong;
+      $("fbImg").onerror = () => { $("fbImg").style.display = "none"; }; // 万一無いとき
+      $("fbImg").style.display = "block";
+
+      $("fbAnswer").innerHTML = `Answer: <b>${escapeHtml(answerText)}</b>`;
+
+      waitingNext = true;
+    }
+
+    function closeFeedback(){
+      const ov = $("fbOverlay");
+      ov.classList.remove("show");
+      ov.setAttribute("aria-hidden","true");
+    }
+
+    function next(){
+      closeFeedback();
+      idx++;
+      if(idx >= questions.length){
+        finish();
+      }else{
+        render();
+      }
+    }
+
+    function finish(){
+      $("bar").style.width = "100%";
+
+      const setId = getParam("setId") || "dictation";
+      localStorage.setItem(KEY_SET_ID, setId);
+      localStorage.setItem(KEY_SCORE, String(score));
+      localStorage.setItem(KEY_TOTAL, String(questions.length));
+
+      playSfxByName("done");
+      setTimeout(() => { location.href = RESULT_URL; }, 550);
+    }
+
+    function check(){
+      if(waitingNext) return;
+
+      const q = questions[idx];
+      const user = normalizeAnswer($("answerInput").value);
+      const ans  = normalizeAnswer(q.answer);
+
+      if(!user){
+        openFeedback(false, q.answer);
+        return;
+      }
+
+      const ok = (user === ans);
+      if(ok) score++;
+
+      playSfxByName(ok ? "correct" : "wrong");
+      updateHeader();
+      openFeedback(ok, q.answer);
+    }
+
+    async function togglePlay(){
+      unlockAudioOnce();
+      if(!voice) return;
+
+      if(!isPlaying){
+        try{
+          await voice.play();
+          isPlaying = true;
+          setPlayButton();
+        }catch(e){
+          // blocked → nothing
+        }
+      }else{
+        voice.pause();
+        isPlaying = false;
+        setPlayButton();
+      }
+    }
+
+    // ====== Wire up ======
+    $("playBtn").addEventListener("click", togglePlay);
+    $("checkBtn").addEventListener("click", check);
+    $("skipBtn").addEventListener("click", () => { if(!waitingNext) next(); });
+
+    $("answerInput").addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        // feedback表示中は Enter で Next
+        if(waitingNext) next();
+        else check();
+      }
+    });
+
+    $("fbNext").addEventListener("click", next);
+    $("fbClose").addEventListener("click", closeFeedback);
+
+    $("exitBtn").addEventListener("click", () => {
+      if(confirm("Exit the quiz?")){
+        location.href = "menu.html";
+      }
+    });
+
+    // ====== Boot ======
+    (async function boot(){
+      try{
+        const dataPath = getParam("data") || DEFAULT_DATA_PATH;
+        questions = await loadQuestions(dataPath);
+
+        if(!questions.length){
+          $("qText").textContent = "No valid questions found (audio/answer required).";
+          $("hint").textContent = "CSVの audio と answer が入っているか確認してね。";
+          return;
+        }
+
+        idx = 0;
+        score = 0;
+        render();
+      }catch(err){
+        $("qText").textContent = "Failed to load quiz data.";
+        $("hint").textContent = String(err);
+      }
+    })();
+  </script>
+</body>
+</html>
       --green:#22c55e;
       --pad:18px;
     }
