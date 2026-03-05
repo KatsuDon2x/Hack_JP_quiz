@@ -15,7 +15,6 @@
       --lime:#C8FF2E;
       --red:#ff4d4d;
       --green:#22c55e;
-      --radius:16px;
       --pad:18px;
     }
     *{ box-sizing:border-box; }
@@ -58,7 +57,6 @@
     .btn-primary:hover{
       box-shadow: 0 0 0 2px rgba(200,255,46,.20) inset, 0 0 18px rgba(200,255,46,.16);
     }
-    .btn-danger:hover{ border-color: rgba(255,77,77,.55); }
 
     .main{ flex:1; padding: var(--pad); display:flex; justify-content:center; }
     .card{
@@ -125,7 +123,7 @@
     <div class="topbar">
       <div class="pill"><span>Progress</span><strong id="counter">0/0</strong></div>
       <div class="pill"><span>Score</span><strong id="score">0</strong></div>
-      <button class="btn btn-danger" id="exitBtn">Exit</button>
+      <button class="btn" id="exitBtn">Exit</button>
     </div>
 
     <div class="main">
@@ -140,7 +138,7 @@
         <div class="row" style="margin-bottom:10px;">
           <button class="btn btn-primary" id="playBtn">▶ Play</button>
           <button class="btn" id="replayBtn">↻ Replay</button>
-          <span class="small">※ 自動再生しません（ブラウザ制限があるため）。必ず Play を押してね。</span>
+          <span class="small">※ ブラウザ仕様で自動再生しません。Play を押してね。</span>
         </div>
 
         <input class="input" id="answerInput" placeholder="聞こえたとおりに入力…" autocomplete="off" />
@@ -158,28 +156,51 @@
   </div>
 
   <script>
-    // ========= Result linkage (keeps your existing result.html pattern) =========
+    // ====== Result linkage ======
     const RESULT_URL = "result.html";
     const KEY_SET_ID = "JPQ_LAST_SET_ID";
     const KEY_SCORE  = "JPQ_LAST_SCORE";
     const KEY_TOTAL  = "JPQ_LAST_TOTAL";
 
-    // ========= Data path (keeps your folder rule: data/) =========
+    // ====== Data path ======
     const DEFAULT_DATA_PATH = "data/dictation.csv";
-
-    // GitHub Pages cache-bust: always fetch fresh
     const CACHE_BUST = "v=" + Date.now();
 
-    // ========= SFX (optional) =========
-    // If files don't exist, it won't crash. Replace paths if yours are different.
+    // ====== GitHub Pages repo base (/Hack_JP_quiz/) を自動計算 ======
+    const REPO_BASE = location.pathname.replace(/\/[^\/]*$/, "/"); // 例: /Hack_JP_quiz/
+
+    // ====== SFX paths（あなたの実ファイル名に完全一致） ======
     const SFX = {
-      correct: "assets/ui/audio/sfx_pin.mp3",
-      wrong:   "assets/ui/audio/sfx_bu.mp3",
-      done:    "assets/ui/audio/sfx_applause.mp3",
-      click:   "assets/ui/audio/sfx_click.mp3"
+      correct: REPO_BASE + "assets/ui/audio/sfx_pin.mp3",
+      wrong:   REPO_BASE + "assets/ui/audio/sfx_bu.mp3",
+      done:    REPO_BASE + "assets/ui/audio/sfx_applause.mp3",
     };
 
-    // ========= Helpers =========
+    // ====== Audio unlock（最初のクリックで音を解錠） ======
+    let AUDIO_UNLOCKED = false;
+    function unlockAudioOnce(){
+      if (AUDIO_UNLOCKED) return;
+      AUDIO_UNLOCKED = true;
+      // 無音の超短い再生で “音OK状態” にする（Safari/スマホ対策）
+      const a = new Audio();
+      a.src = "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAA==";
+      a.volume = 0;
+      a.play().catch(()=>{});
+    }
+    document.addEventListener("pointerdown", unlockAudioOnce, { once: true });
+
+    // ====== ここが “確実に鳴る” 再生方法（毎回 new Audio で作る） ======
+    function playSfxByName(name){
+      unlockAudioOnce();
+      const src = SFX[name];
+      if(!src) return;
+      const a = new Audio(src);
+      a.volume = 0.95;
+      a.currentTime = 0;
+      a.play().catch(()=>{});
+    }
+
+    // ====== Helpers ======
     const $ = (id) => document.getElementById(id);
 
     function getParam(name){
@@ -187,35 +208,18 @@
       return u.searchParams.get(name);
     }
 
-    function safeAudio(src){
-      if(!src) return null;
-      const a = new Audio(src);
-      a.preload = "auto";
-      a.volume = 0.95;
-      a.addEventListener("error", () => {/* ignore */});
-      return a;
-    }
-
-    const sfxCorrect = safeAudio(SFX.correct);
-    const sfxWrong   = safeAudio(SFX.wrong);
-    const sfxDone    = safeAudio(SFX.done);
-    const sfxClick   = safeAudio(SFX.click);
-
-    function playSfx(a){
-      try{
-        if(!a) return;
-        a.currentTime = 0;
-        a.play().catch(()=>{});
-      }catch(e){}
-    }
-
-    // Dictation: normalize gently (spaces removed, lower-case)
     function normalizeAnswer(s){
       return (s ?? "")
         .trim()
         .replace(/\s+/g, "")
         .replace(/[’‘]/g, "'")
         .toLowerCase();
+    }
+
+    function escapeHtml(s){
+      return (s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
     }
 
     function showToast(ok, title, msg){
@@ -229,7 +233,7 @@
       t.innerHTML = "";
     }
 
-    // ========= CSV parser (handles quotes) =========
+    // ====== CSV parser ======
     function parseCSV(text){
       const rows = [];
       let row = [], cur = "", inQ = false;
@@ -268,13 +272,13 @@
     }
 
     async function loadQuestions(dataPath){
+      // dataPath は相対でもOK。常に最新を読ませる
       const url = `${dataPath}?${CACHE_BUST}`;
       const res = await fetch(url);
       if(!res.ok) throw new Error("Failed to load data: " + url);
       const text = await res.text();
       const items = parseCSV(text);
 
-      // Expected columns: id,prompt,answer,hint,img,audio
       const questions = items.map(x => ({
         id: x.id || "",
         prompt: x.prompt || "聞いて入力してください",
@@ -284,22 +288,21 @@
         audio: x.audio || ""
       }));
 
-      // Audio is mandatory: filter out empty answer or audio, but also show a warning
       const bad = questions.filter(q => !q.answer || !q.audio);
       if(bad.length){
         $("audioWarn").style.display = "block";
         $("audioWarn").textContent =
-          `⚠ データに不備があります（answer か audio が空欄の行が ${bad.length} 件）。その行はスキップされます。`;
+          `⚠ CSVで answer か audio が空欄の行が ${bad.length} 件あります。その行はスキップされます。`;
       }
 
       return questions.filter(q => q.answer && q.audio);
     }
 
-    // ========= Game state =========
+    // ====== Game state ======
     let questions = [];
     let idx = 0;
     let score = 0;
-    let voice = null; // current question audio
+    let voice = null;
 
     function updateHeader(){
       $("counter").textContent = `${Math.min(idx+1, questions.length)}/${questions.length}`;
@@ -315,10 +318,8 @@
       const q = questions[idx];
       $("qText").textContent = q.prompt;
 
-      // hint text (optional)
       $("hint").innerHTML = q.hint ? `Hint: <span class="ans">${escapeHtml(q.hint)}</span>` : "";
 
-      // image (optional)
       const media = $("media");
       media.innerHTML = "";
       if(q.img){
@@ -329,15 +330,14 @@
         media.appendChild(img);
       }
 
-      // audio (mandatory here)
-      voice = safeAudio(q.audio);
+      voice = new Audio(q.audio);
+      voice.preload = "auto";
+      voice.volume = 1.0;
 
       $("answerInput").value = "";
       $("answerInput").focus();
 
-      // title from params (optional)
-      const setName = getParam("title") || "Dictation Quiz";
-      $("setTitle").textContent = setName;
+      $("setTitle").textContent = getParam("title") || "Dictation Quiz";
     }
 
     function next(){
@@ -357,8 +357,8 @@
       localStorage.setItem(KEY_SCORE, String(score));
       localStorage.setItem(KEY_TOTAL, String(questions.length));
 
-      playSfx(sfxDone);
-      setTimeout(() => { location.href = RESULT_URL; }, 450);
+      playSfxByName("done");
+      setTimeout(() => { location.href = RESULT_URL; }, 550);
     }
 
     function check(){
@@ -373,19 +373,18 @@
 
       if(user === ans){
         score++;
-        playSfx(sfxCorrect);
+        playSfxByName("correct");
         showToast(true, "Correct!", q.answer);
-        setTimeout(next, 550);
+        setTimeout(next, 650);
       }else{
-        playSfx(sfxWrong);
-        // ディクテーションは詰まりやすいので、MVPは「答えを見せて次へ」
+        playSfxByName("wrong");
         showToast(false, "Not quite", `Answer: ${escapeHtml(q.answer)}`);
         setTimeout(next, 900);
       }
     }
 
     function playVoice(){
-      playSfx(sfxClick);
+      unlockAudioOnce();
       if(!voice){
         showToast(false, "Audio missing", "この問題は音声がありません。CSVの audio 列を確認してね。");
         return;
@@ -400,32 +399,24 @@
       }
     }
 
-    function escapeHtml(s){
-      return (s ?? "").replace(/[&<>"']/g, (c) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
-    }
-
-    // ========= Wire up =========
+    // ====== Wire up ======
     $("playBtn").addEventListener("click", playVoice);
     $("replayBtn").addEventListener("click", playVoice);
 
-    $("checkBtn").addEventListener("click", () => { playSfx(sfxClick); check(); });
-    $("skipBtn").addEventListener("click", () => { playSfx(sfxClick); next(); });
+    $("checkBtn").addEventListener("click", check);
+    $("skipBtn").addEventListener("click", next);
 
     $("answerInput").addEventListener("keydown", (e) => {
       if(e.key === "Enter"){ check(); }
     });
 
     $("exitBtn").addEventListener("click", () => {
-      playSfx(sfxClick);
       if(confirm("Exit the quiz?")){
-        // keep your existing flow; change if your app uses a different page
         location.href = "menu.html";
       }
     });
 
-    // ========= Boot =========
+    // ====== Boot ======
     (async function boot(){
       try{
         const dataPath = getParam("data") || DEFAULT_DATA_PATH;
