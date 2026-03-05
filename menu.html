@@ -777,7 +777,7 @@ details[open] > summary.topicHead{
 
     document.getElementById("exitBtn").addEventListener("click", showExitBar);
     document.getElementById("exitContinue").addEventListener("click", hideExitBar);
-    document.getElementById("exitQuit").addEventListener("click", ()=> location.href="upload.html");
+    document.getElementById("exitQuit").addEventListener("click", ()=> location.href="splash.html");
 
     /* ===== Drawer ===== */
     const drawer = document.getElementById("drawer");
@@ -797,7 +797,7 @@ details[open] > summary.topicHead{
     overlay.addEventListener("click", closeDrawer);
 
     /* ===== Bottom nav + global review/saved ===== */
-    document.getElementById("navHome").addEventListener("click", ()=> location.href="upload.html");
+    document.getElementById("navHome").addEventListener("click", ()=> location.href="splash.html");
 
     // quiz.html writes these:
     const LS_WRONG_IDS_BY_SET = "JPQ_WRONG_IDS_BY_SET";      // { [setId]: [qId,...] }
@@ -873,9 +873,9 @@ details[open] > summary.topicHead{
         renderTopics();
         syncNavBadges();
       }catch(err){
-        alert("Menu cannot load sets.csv.\n\nOpen upload.html first and upload CSV files.\n\n" + err);
+        alert("Menu cannot load sets.csv.\n\nCheck that data/sets.csv exists in the repository.\n\n" + err);
         console.error(err);
-        location.href = "upload.html";
+        location.href = "splash.html";
         return;
       }
 
