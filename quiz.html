@@ -1,4 +1,4 @@
-<!doctype html>
+    <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
@@ -404,16 +404,16 @@
       }
 
       // set audio
-      // set audio
-      stopVoice(); // ★ここ
+      stopVoice(); // 前の音を止める
+
       voice = new Audio(q.audio);
       voice.preload = "auto";
       voice.volume = 1.0;
-      voice.loop = true;
-      voice = new Audio(q.audio);
-      voice.preload = "auto";
-      voice.volume = 1.0;
-      voice.loop = true; // ★押したら永遠にループ
+      voice.loop = true; // Playしたらループ
+
+      // reset play state
+      isPlaying = false;
+      setPlayButton();
 
       // reset play state
       try{ voice.pause(); }catch(e){}
