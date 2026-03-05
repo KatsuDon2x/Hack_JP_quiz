@@ -1,24 +1,9 @@
-    <!doctype html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dictation Quiz</title>
-
-  <style>
-    :root{
-      --bg:#000;
-      --fg:#fff;
-      --muted:rgba(255,255,255,.68);
-      --card:rgba(255,255,255,.08);
-      --stroke:rgba(255,255,255,.14);
-      --lime:#C8FF2E;
-      --red:#ff4d4d;<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dictation Quiz</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,interactive-widget=resizes-content" />
+  <title>Quiz</title>
 
   <style>
     :root{
@@ -32,20 +17,23 @@
       --green:#22c55e;
       --pad:18px;
     }
-    *{ box-sizing:border-box; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
     html,body{ height:100%; }
     body{
-      margin:0;
       background:var(--bg);
       color:var(--fg);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", sans-serif;
     }
+
+    /* ===== Layout ===== */
     .wrap{ min-height:100%; display:flex; flex-direction:column; }
+
     .topbar{
       display:flex; align-items:center; justify-content:space-between;
       padding:14px 16px; border-bottom:1px solid var(--stroke);
       background:rgba(0,0,0,.55); position:sticky; top:0;
       backdrop-filter: blur(10px); z-index:5;
+      flex-shrink:0;
     }
     .pill{
       display:inline-flex; align-items:center; gap:10px;
@@ -63,6 +51,8 @@
       border-radius:12px;
       cursor:pointer;
       user-select:none;
+      font-size:15px;
+      transition: border-color .15s;
     }
     .btn:hover{ border-color: rgba(200,255,46,.55); }
     .btn-primary{
@@ -72,21 +62,50 @@
     .btn-primary:hover{
       box-shadow: 0 0 0 2px rgba(200,255,46,.20) inset, 0 0 18px rgba(200,255,46,.16);
     }
+    .btn-choice{
+      width:100%;
+      text-align:left;
+      padding:14px 16px;
+      border-radius:16px;
+      font-size:17px;
+      line-height:1.4;
+      transition: border-color .15s, background .15s;
+    }
+    .btn-choice:hover{ background:rgba(255,255,255,.12); }
+    .btn-choice.selected{
+      border-color: rgba(200,255,46,.7);
+      background:rgba(200,255,46,.08);
+    }
+    .btn-choice.correct{
+      border-color: var(--green) !important;
+      background:rgba(34,197,94,.12) !important;
+    }
+    .btn-choice.wrong{
+      border-color: var(--red) !important;
+      background:rgba(255,77,77,.12) !important;
+    }
 
-    .main{ flex:1; padding: var(--pad); display:flex; justify-content:center; }
+    .main{
+      flex:1;
+      padding: var(--pad);
+      display:flex;
+      justify-content:center;
+      /* キーボード表示時にスクロールできるよう overflow は wrap 側で管理 */
+    }
     .card{
       width:min(760px, 100%);
       border:1px solid var(--stroke);
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border-radius: 22px;
-      padding: 18px;
+      padding: 20px;
       box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      align-self: flex-start;
     }
 
     .progress{
       height:10px; background:rgba(255,255,255,.08);
       border:1px solid var(--stroke); border-radius:999px;
-      overflow:hidden; margin:10px 0 14px;
+      overflow:hidden; margin:0 0 18px;
     }
     .progress > div{
       height:100%; width:0%;
@@ -94,39 +113,75 @@
       transition: width .35s ease;
     }
 
-    .q-title{ font-size:14px; color:var(--muted); margin:0 0 6px; }
-    .q-text{ font-size:22px; line-height:1.45; margin:0 0 14px; word-break:break-word; }
+    .q-label{ font-size:13px; color:var(--muted); margin:0 0 8px; letter-spacing:.03em; }
+    .q-prompt{ font-size:21px; line-height:1.55; margin:0 0 18px; word-break:break-word; }
+    .q-prompt ruby rt{ font-size:.5em; opacity:.8; }
 
-    .media{ display:grid; grid-template-columns: 1fr; gap:12px; margin: 10px 0 14px; }
+    /* ===== Media grid ===== */
+    .media{ display:grid; grid-template-columns:1fr; gap:10px; margin:0 0 16px; }
+    .media.multi{ grid-template-columns: repeat(2, 1fr); }
     .media img{
-      width:100%; border-radius:16px; border:1px solid var(--stroke);
+      width:100%; border-radius:14px; border:1px solid var(--stroke);
       background:rgba(255,255,255,.03); display:block;
+      cursor:pointer;
     }
+    .media img.img-choice{ transition: outline .15s; outline: 3px solid transparent; }
+    .media img.selected{ outline: 3px solid var(--lime); }
+    .media img.correct{ outline: 3px solid var(--green) !important; }
+    .media img.wrong{ outline: 3px solid var(--red) !important; }
 
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    /* ===== Audio row ===== */
+    .audio-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:0 0 16px; }
 
+    /* ===== Choices ===== */
+    .choices{ display:flex; flex-direction:column; gap:10px; margin:0 0 16px; }
+
+    /* ===== Text input (q_type_6) ===== */
+    .input-wrap{ margin:0 0 16px; }
     .input{
-      width:100%; font-size:18px; padding:14px 14px;
+      width:100%; font-size:19px; padding:15px 16px;
       border-radius:16px; border:1px solid var(--stroke);
       background:rgba(255,255,255,.06); color:var(--fg); outline:none;
+      transition: border-color .15s, box-shadow .15s;
     }
     .input:focus{
       border-color: rgba(200,255,46,.65);
       box-shadow: 0 0 0 3px rgba(200,255,46,.12);
     }
+    .input.correct{ border-color: var(--green); }
+    .input.wrong  { border-color: var(--red);   }
 
-    .hint{ margin-top:10px; color:var(--muted); font-size:14px; }
-    .hint .ans{ color: rgba(255,255,255,.9); }
+    /* ===== Accepted answers display ===== */
+    .accepted-wrap{
+      margin:0 0 16px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.3);
+      display:none;
+    }
+    .accepted-label{ font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .accepted-list{ display:flex; flex-wrap:wrap; gap:8px; }
+    .accepted-chip{
+      padding:5px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid var(--stroke);
+      font-size:15px;
+    }
 
-    .small{ font-size:12px; color:rgba(255,255,255,.5); margin-top:10px; }
-    .warn{ color: rgba(255,200,0,.9); }
+    /* ===== Action row ===== */
+    .action-row{ display:flex; gap:10px; flex-wrap:wrap; margin:0 0 10px; }
 
-    /* ===== feedback overlay ===== */
+    .hint{ color:var(--muted); font-size:14px; margin-top:8px; }
+    .warn{ color:rgba(255,200,0,.9); font-size:12px; margin-top:8px; }
+
+    /* ===== Feedback overlay ===== */
     .overlay{
       position:fixed; inset:0;
       display:none;
       align-items:center; justify-content:center;
-      background:rgba(0,0,0,.86);
+      background:rgba(0,0,0,.88);
       z-index:100;
       padding:18px;
     }
@@ -138,924 +193,693 @@
       background:rgba(255,255,255,.06);
       backdrop-filter: blur(10px);
       box-shadow:0 18px 50px rgba(0,0,0,.55);
-      padding:16px;
+      padding:18px;
     }
-    .panelTop{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
-    .panel img{
-      width:min(520px, 100%);
+    .panel-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+    .panel img.fb-img{
+      width:min(480px, 100%);
       height:auto;
       display:block;
-      margin:10px auto 12px;
+      margin:0 auto 14px;
       user-select:none; -webkit-user-drag:none;
     }
-    .panel .answerLine{
-      font-size:18px;
-      line-height:1.5;
-      padding:10px 12px;
+    .panel .script-block{
+      font-size:17px; line-height:1.6;
+      padding:12px 14px;
       border-radius:14px;
-      border:1px solid rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.14);
       background:rgba(0,0,0,.35);
-      margin:0 0 12px;
+      margin-bottom:14px;
       word-break:break-word;
     }
-    .panelBtns{ display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+    .panel .script-block ruby rt{ font-size:.5em; opacity:.8; }
+    .panel-btns{ display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+
+    /* ===== Loading / error ===== */
+    .state-msg{
+      padding:60px 20px;
+      text-align:center;
+      color:var(--muted);
+      font-size:18px;
+      line-height:1.7;
+    }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="pill"><span>Progress</span><strong id="counter">0/0</strong></div>
-      <div class="pill"><span>Score</span><strong id="score">0</strong></div>
-      <button class="btn" id="exitBtn">Exit</button>
-    </div>
+<div class="wrap" id="wrap">
 
-    <div class="main">
-      <div class="card">
-        <div class="progress"><div id="bar"></div></div>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="pill"><span>Progress</span><strong id="counter">0/0</strong></div>
+    <div class="pill"><span>Score</span><strong id="scoreDisp">0</strong></div>
+    <button class="btn" id="exitBtn">Exit</button>
+  </div>
 
-        <p class="q-title" id="setTitle">Dictation Quiz</p>
-        <p class="q-text" id="qText">Loading...</p>
+  <!-- Main card -->
+  <div class="main" id="mainArea">
+    <div class="card" id="card">
+      <div class="progress"><div id="bar"></div></div>
 
-        <div class="media" id="media"></div>
+      <!-- Question label (type / set title) -->
+      <p class="q-label" id="qLabel">Loading…</p>
 
-        <div class="row" style="margin-bottom:10px;">
-          <button class="btn btn-primary" id="playBtn">▶ Play</button>
-          <span class="small" id="playHint" style="display:none;">Playing (loop)</span>
-        </div>
+      <!-- Prompt text -->
+      <p class="q-prompt" id="qPrompt"></p>
 
-        <input class="input" id="answerInput" placeholder="Type what you heard…" autocomplete="off" />
+      <!-- Media (image/s) -->
+      <div class="media" id="media"></div>
 
-        <div class="row" style="margin-top:12px;">
-          <button class="btn btn-primary" id="checkBtn">Check</button>
-          <button class="btn" id="skipBtn">Skip</button>
-        </div>
-
-        <div class="hint" id="hint"></div>
-        <div class="small warn" id="audioWarn" style="display:none;"></div>
+      <!-- Audio row -->
+      <div class="audio-row" id="audioRow" style="display:none;">
+        <button class="btn btn-primary" id="playBtn">▶ Play</button>
+        <span style="font-size:12px;color:var(--muted);display:none;" id="playHint">Playing…</span>
       </div>
+
+      <!-- Text choices (type 1, 2, 7) -->
+      <div class="choices" id="choicesText"></div>
+
+      <!-- Text input (type 6) -->
+      <div class="input-wrap" id="inputWrap" style="display:none;">
+        <input class="input" id="ansInput" type="text"
+               autocomplete="off" autocorrect="off" autocapitalize="none"
+               spellcheck="false" placeholder="ここに入力…" />
+      </div>
+
+      <!-- Accepted answers -->
+      <div class="accepted-wrap" id="acceptedWrap">
+        <div class="accepted-label">Accepted answers</div>
+        <div class="accepted-list" id="acceptedList"></div>
+      </div>
+
+      <!-- Action row -->
+      <div class="action-row" id="actionRow">
+        <button class="btn btn-primary" id="checkBtn" style="display:none;">Check</button>
+        <button class="btn" id="skipBtn">Skip</button>
+      </div>
+
+      <div class="hint" id="hintEl"></div>
+      <div class="warn" id="warnEl"></div>
     </div>
   </div>
 
-  <!-- feedback overlay -->
-  <div class="overlay" id="fbOverlay" aria-hidden="true">
-    <div class="panel">
-      <div class="panelTop">
-        <div class="pill"><span>Answer</span><strong id="fbStatus">OK</strong></div>
-        <button class="btn" id="fbClose">×</button>
-      </div>
+</div>
 
-      <!-- ★ここが「正解・不正解のPNG」 -->
-      <img id="fbImg" src="" alt="feedback" />
-
-      <div class="answerLine" id="fbAnswer"></div>
-
-      <div class="panelBtns">
-        <button class="btn btn-primary" id="fbNext">Next</button>
-      </div>
+<!-- Feedback overlay -->
+<div class="overlay" id="fbOverlay" aria-hidden="true">
+  <div class="panel">
+    <div class="panel-top">
+      <div class="pill"><strong id="fbStatus">OK</strong></div>
+      <button class="btn" id="fbClose">×</button>
+    </div>
+    <img class="fb-img" id="fbImg" src="" alt="feedback" style="display:none;" />
+    <div class="script-block" id="fbScript" style="display:none;"></div>
+    <div class="panel-btns">
+      <button class="btn btn-primary" id="fbNext">Next →</button>
     </div>
   </div>
+</div>
 
-  <script>
-    function stopVoice(){
-  try{
-    if(voice){
-      voice.pause();
-      voice.currentTime = 0;
-      voice.src = "";   // ← 古い音を確実に切る（重要）
-      voice.load?.();
-    }
-  }catch(e){}
-  isPlaying = false;
-  setPlayButton();
+<script>
+"use strict";
+
+/* =========================================================
+   CONSTANTS
+   ========================================================= */
+const RESULT_URL   = "result.html";
+const KEY_SET_ID   = "JPQ_LAST_SET_ID";
+const KEY_SCORE    = "JPQ_LAST_SCORE";
+const KEY_TOTAL    = "JPQ_LAST_TOTAL";
+const LS_SETS      = "JPQ_SETS_CSV";
+const LS_QS        = "JPQ_QUESTIONS_CSV";
+const LS_UI        = "JPQ_UI_TEXT_CSV";
+
+const REPO_BASE    = location.pathname.replace(/\/[^\/]*$/, "/");
+
+const SFX = {
+  correct: REPO_BASE + "assets/ui/audio/sfx_pin.mp3",
+  wrong:   REPO_BASE + "assets/ui/audio/sfx_bu.mp3",
+  done:    REPO_BASE + "assets/ui/audio/sfx_applause.mp3",
+};
+const FEEDBACK_PNG = {
+  correct: REPO_BASE + "assets/ui/messages/message-result-pin.png",
+  wrong:   REPO_BASE + "assets/ui/messages/message-result-bu.png",
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const $  = id => document.getElementById(id);
+const qp = name => new URL(location.href).searchParams.get(name);
+
+/* --- TSV / CSV auto-detect parser --- */
+function parseDelimited(text){
+  if(!text) return [];
+  const lines = text.split(/\r?\n/);
+  if(!lines.length) return [];
+
+  // auto-detect: count tabs vs commas in header
+  const sep = (lines[0].split("\t").length > lines[0].split(",").length) ? "\t" : ",";
+
+  if(sep === ","){
+    // full RFC4180 CSV
+    return parseCSV(text);
+  }
+
+  // Simple TSV (tabs, no quoting needed for our data)
+  const header = lines[0].split("\t").map(h => h.trim());
+  const out = [];
+  for(let i = 1; i < lines.length; i++){
+    const line = lines[i];
+    if(!line.trim()) continue;
+    const cols = line.split("\t");
+    const obj = {};
+    header.forEach((h, ci) => { obj[h] = (cols[ci] ?? "").trim(); });
+    out.push(obj);
+  }
+  return out;
 }
-    
-    // ====== Result linkage ======
-    const RESULT_URL = "result.html";
-    const KEY_SET_ID = "JPQ_LAST_SET_ID";
-    const KEY_SCORE  = "JPQ_LAST_SCORE";
-    const KEY_TOTAL  = "JPQ_LAST_TOTAL";
 
-    // ====== Data path ======
-    const DEFAULT_DATA_PATH = "data/dictation.csv";
-    const CACHE_BUST = "v=" + Date.now();
-
-    // ====== repo base (/Hack_JP_quiz/) ======
-    const REPO_BASE = location.pathname.replace(/\/[^\/]*$/, "/");
-
-    // ====== SFX (your existing filenames) ======
-    const SFX = {
-      correct: REPO_BASE + "assets/ui/audio/sfx_pin.mp3",
-      wrong:   REPO_BASE + "assets/ui/audio/sfx_bu.mp3",
-      done:    REPO_BASE + "assets/ui/audio/sfx_applause.mp3",
-    };
-
-    // ====== Feedback PNG (CHANGE HERE if filenames differ) ======
-    const FEEDBACK_PNG = {
-      correct: REPO_BASE + "assets/ui/messages/message-result-pin.png",
-      wrong:   REPO_BASE + "assets/ui/messages/message-result-bu.png",
-    };
-
-    // ====== Audio unlock ======
-    let AUDIO_UNLOCKED = false;
-    function unlockAudioOnce(){
-      if (AUDIO_UNLOCKED) return;
-      AUDIO_UNLOCKED = true;
-      const a = new Audio();
-      a.src = "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAA==";
-      a.volume = 0;
-      a.play().catch(()=>{});
+function parseCSV(text){
+  const rows = [];
+  let row = [], cur = "", inQ = false;
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i], nx = text[i+1];
+    if(ch==='"' && inQ && nx==='"'){ cur+='"'; i++; continue; }
+    if(ch==='"'){ inQ=!inQ; continue; }
+    if(ch===',' && !inQ){ row.push(cur); cur=""; continue; }
+    if((ch==='\n'||ch==='\r') && !inQ){
+      if(ch==='\r'&&nx==='\n') i++;
+      row.push(cur); cur="";
+      if(row.some(c=>c.trim())) rows.push(row);
+      row=[];
+      continue;
     }
-    document.addEventListener("pointerdown", unlockAudioOnce, { once: true });
+    cur+=ch;
+  }
+  row.push(cur);
+  if(row.some(c=>c.trim())) rows.push(row);
+  if(!rows.length) return [];
+  const header = rows[0].map(h=>h.trim());
+  return rows.slice(1).map(r=>{
+    const obj={};
+    header.forEach((h,ci)=>{ obj[h]=(r[ci]??"").trim(); });
+    return obj;
+  });
+}
 
-    function playSfxByName(name){
-      unlockAudioOnce();
-      const src = SFX[name];
-      if(!src) return;
-      const a = new Audio(src);
-      a.volume = 0.95;
-      a.play().catch(()=>{});
-    }
+/* --- Markup renderer: ruby / formatting tags --- */
+function renderMarkup(raw){
+  if(!raw) return "";
+  let s = raw
+    // ruby: [ruby]漢[rt]かん[/rt][/ruby]
+    .replace(/\[ruby\]([\s\S]*?)\[rt\]([\s\S]*?)\[\/rt\]\[\/ruby\]/g,
+             (_,base,rt)=>`<ruby>${esc(base)}<rt>${esc(rt)}</rt></ruby>`)
+    // inline styles
+    .replace(/\[hl\]([\s\S]*?)\[\/hl\]/g, `<mark>$1</mark>`)
+    .replace(/\[u\]([\s\S]*?)\[\/u\]/g,   `<u>$1</u>`)
+    .replace(/\[i\]([\s\S]*?)\[\/i\]/g,   `<i>$1</i>`)
+    .replace(/\[b\]([\s\S]*?)\[\/b\]/g,   `<b>$1</b>`)
+    .replace(/\[small\]([\s\S]*?)\[\/small\]/g, `<small>$1</small>`)
+    .replace(/\[big\]([\s\S]*?)\[\/big\]/g,     `<big>$1</big>`)
+    .replace(/\[br\]/g, "<br/>")
+    // raw ruby shorthand already handled above; escape remaining < >
+    ;
+  return s;
+}
 
-    // ====== Helpers ======
-    const $ = (id) => document.getElementById(id);
-    function getParam(name){
-      const u = new URL(location.href);
-      return u.searchParams.get(name);
-    }
+function esc(s){ return (s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-    function normalizeAnswer(s){
-      return (s ?? "")
-        .trim()
-        .replace(/\s+/g, "")
-        .replace(/[’‘]/g, "'")
-        .toLowerCase();
-    }
+/* --- normalise text for comparison --- */
+function norm(s){
+  return (s??"").trim().replace(/\s+/g,"").replace(/['']/g,"'").toLowerCase();
+}
 
-    function escapeHtml(s){
-      return (s ?? "").replace(/[&<>"']/g, (c) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
-    }
+/* --- Fisher-Yates shuffle (in-place) --- */
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
 
-    // ====== CSV parser ======
-    function parseCSV(text){
-      const rows = [];
-      let row = [], cur = "", inQ = false;
-      for(let i=0;i<text.length;i++){
-        const ch = text[i];
-        const next = text[i+1];
+/* =========================================================
+   AUDIO
+   ========================================================= */
+let AUDIO_UNLOCKED = false;
+function unlockAudio(){
+  if(AUDIO_UNLOCKED) return;
+  AUDIO_UNLOCKED = true;
+  const a = new Audio();
+  a.src = "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAA==";
+  a.volume=0; a.play().catch(()=>{});
+}
+document.addEventListener("pointerdown", unlockAudio, {once:true});
 
-        if(ch === '"' && inQ && next === '"'){ cur += '"'; i++; continue; }
-        if(ch === '"'){ inQ = !inQ; continue; }
+function playSfx(name){
+  unlockAudio();
+  const src = SFX[name]; if(!src) return;
+  const a = new Audio(src); a.volume=0.95; a.play().catch(()=>{});
+}
 
-        if(ch === ',' && !inQ){ row.push(cur); cur = ""; continue; }
-        if((ch === '\n' || ch === '\r') && !inQ){
-          if(ch === '\r' && next === '\n') i++;
-          row.push(cur); cur = "";
-          if(row.some(c => (c ?? "").trim() !== "")) rows.push(row);
-          row = [];
-          continue;
-        }
-        cur += ch;
+let voice = null, voicePlaying = false;
+
+function stopVoice(){
+  try{ if(voice){ voice.pause(); voice.currentTime=0; voice.src=""; voice.load?.(); } }catch(e){}
+  voicePlaying=false;
+  updatePlayBtn();
+}
+
+function updatePlayBtn(){
+  const btn=$("playBtn"), hint=$("playHint");
+  if(!btn) return;
+  btn.textContent = voicePlaying ? "⏸ Pause" : "▶ Play";
+  if(hint) hint.style.display = voicePlaying ? "inline" : "none";
+}
+
+async function toggleVoice(){
+  unlockAudio();
+  if(!voice) return;
+  if(!voicePlaying){
+    try{ await voice.play(); voicePlaying=true; updatePlayBtn(); }catch(e){}
+  } else {
+    voice.pause(); voicePlaying=false; updatePlayBtn();
+  }
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let questions  = [];   // filtered, ordered list for this session
+let uiText     = {};   // { en: {key:text}, ja: {key:text} }
+let idx        = 0;
+let score      = 0;
+let answered   = false;
+let selectedIdx = -1;  // for MCQ choices
+
+/* =========================================================
+   DATA LOADING
+   ========================================================= */
+function loadUI(rows){
+  const out = { en:{}, ja:{} };
+  rows.forEach(r=>{
+    const lang=(r.ui||r.lang||"en").trim().toLowerCase();
+    if(out[lang]) out[lang][r.key]=r.text;
+  });
+  return out;
+}
+
+function getUIText(key, lang="en"){
+  return renderMarkup( (uiText[lang]||{})[key] || (uiText["en"]||{})[key] || key );
+}
+
+function loadData(){
+  const setsRaw  = localStorage.getItem(LS_SETS)  || "";
+  const qsRaw    = localStorage.getItem(LS_QS)    || "";
+  const uiRaw    = localStorage.getItem(LS_UI)    || "";
+
+  if(!qsRaw) throw new Error("questions.csv がアップロードされていません。upload.html に戻ってCSVをアップロードしてください。");
+
+  const uiRows   = uiRaw ? parseDelimited(uiRaw) : [];
+  uiText = loadUI(uiRows);
+
+  const qRows    = parseDelimited(qsRaw);
+
+  const setId    = qp("set_id") || "";
+  const mode     = qp("mode")   || "";   // "review" | "saved" | ""
+
+  let filtered = setId
+    ? qRows.filter(r => r.set_id === setId)
+    : qRows;
+
+  // is_published filter (if column exists)
+  filtered = filtered.filter(r => r.is_published === undefined || r.is_published === "" || r.is_published === "1");
+
+  if(!filtered.length) throw new Error(`set_id="${setId}" に該当する問題が見つかりません。`);
+
+  // Build question objects
+  const qs = filtered.map(r => ({
+    id:         r.question_id || r.id || "",
+    set_id:     r.set_id || "",
+    type:       r.type || "q_type_2_mcq_text",
+    prompt_en:  r.prompt_en || r.prompt || "",
+    prompt_ja:  r.prompt_ja || "",
+    audio:      r.audio_file || r.audio || "",
+    images:     (r.image_files||r.img||"").split("|").map(s=>s.trim()).filter(Boolean),
+    choices:    (r.choices_text||r.choices||"").split("|").map(s=>s.trim()).filter(Boolean),
+    answerIdx:  r.answer_index !== "" && r.answer_index !== undefined ? Number(r.answer_index) : 0,
+    script_en:  r.script_en || "",
+    script_ja:  r.script_ja || "",
+  }));
+
+  return qs;
+}
+
+/* =========================================================
+   RENDER QUESTION
+   ========================================================= */
+function render(){
+  answered   = false;
+  selectedIdx = -1;
+
+  const q = questions[idx];
+
+  // header
+  $("counter").textContent = `${idx+1}/${questions.length}`;
+  $("scoreDisp").textContent = String(score);
+  const pct = questions.length ? (idx / questions.length)*100 : 0;
+  $("bar").style.width = `${pct}%`;
+
+  // label = UI text for type
+  $("qLabel").innerHTML = getUIText(q.type);
+
+  // prompt (prefer Japanese if available)
+  const promptRaw = q.prompt_ja || q.prompt_en;
+  $("qPrompt").innerHTML = renderMarkup(promptRaw);
+
+  // clear previous
+  $("media").innerHTML     = "";
+  $("choicesText").innerHTML = "";
+  $("hintEl").textContent  = "";
+  $("warnEl").textContent   = "";
+  $("acceptedWrap").style.display = "none";
+
+  // reset input
+  $("inputWrap").style.display  = "none";
+  $("ansInput").value           = "";
+  $("ansInput").className       = "input";
+  $("checkBtn").style.display   = "none";
+
+  // audio
+  stopVoice();
+  if(q.audio){
+    $("audioRow").style.display = "flex";
+    voice = new Audio(q.audio);
+    voice.preload="auto"; voice.volume=1.0; voice.loop=true;
+    voicePlaying=false; updatePlayBtn();
+  } else {
+    $("audioRow").style.display = "none";
+    voice = null;
+  }
+
+  // images
+  if(q.images.length){
+    const grid = $("media");
+    const isMulti = q.images.length > 1;
+    if(isMulti) grid.classList.add("multi"); else grid.classList.remove("multi");
+
+    q.images.forEach((src, i) => {
+      const img = document.createElement("img");
+      img.src = src; img.alt = `image ${i+1}`;
+      img.addEventListener("error", ()=>{ img.remove(); });
+
+      // MCQ image type: make clickable
+      if(q.type === "q_type_3_mcq_image"){
+        img.classList.add("img-choice");
+        img.dataset.idx = i;
+        img.addEventListener("click", ()=>{ if(!answered) selectImage(i); });
       }
-      row.push(cur);
-      if(row.some(c => (c ?? "").trim() !== "")) rows.push(row);
+      grid.appendChild(img);
+    });
+  }
 
-      if(rows.length === 0) return [];
+  // --- render by type ---
+  switch(q.type){
+    case "q_type_1_listen_only":
+      renderListenOnly(q); break;
+    case "q_type_2_mcq_text":
+    case "q_type_7_fill_in_the_blank":
+      renderMCQText(q); break;
+    case "q_type_3_mcq_image":
+      renderMCQImage(q); break;
+    case "q_type_6_input":
+      renderInput(q); break;
+    default:
+      renderMCQText(q); // fallback
+  }
+}
 
-      const header = rows[0].map(h => (h ?? "").trim());
-      const out = [];
-      for(let r=1;r<rows.length;r++){
-        const obj = {};
-        for(let c=0;c<header.length;c++){
-          obj[header[c]] = (rows[r][c] ?? "").trim();
-        }
-        out.push(obj);
-      }
-      return out;
-    }
+/* --- Type 1: listen only (2 fixed choices, first = correct) --- */
+function renderListenOnly(q){
+  renderChoiceButtons(q.choices, /*shuffle=*/false, q);
+}
 
-    async function loadQuestions(dataPath){
-      const url = `${dataPath}?${CACHE_BUST}`;
-      const res = await fetch(url);
-      if(!res.ok) throw new Error("Failed to load data: " + url);
-      const text = await res.text();
-      const items = parseCSV(text);
+/* --- Type 2 / 7: MCQ text (shuffle except type_1) --- */
+function renderMCQText(q){
+  // build shuffled choice list with original indices
+  const indexed = q.choices.map((c,i)=>({text:c, origIdx:i}));
+  shuffle(indexed);
+  renderChoiceButtons(indexed.map(x=>x.text), false, q, indexed);
+}
 
-      const questions = items.map(x => ({
-        id: x.id || "",
-        prompt: x.prompt || "Listen",
-        answer: x.answer || "",
-        hint: x.hint || "",
-        img: x.img || "",
-        audio: x.audio || ""
-      }));
+/* --- Type 3: MCQ image --- */
+function renderMCQImage(q){
+  // clickable images already rendered above; just show a Check button
+  $("checkBtn").style.display = "inline-block";
+}
 
-      const bad = questions.filter(q => !q.answer || !q.audio);
-      if(bad.length){
-        $("audioWarn").style.display = "block";
-        $("audioWarn").textContent =
-          `⚠ CSVで answer か audio が空欄の行が ${bad.length} 件あります。その行はスキップされます。`;
-      }
-      return questions.filter(q => q.answer && q.audio);
-    }
+/* --- Render text choice buttons --- */
+function renderChoiceButtons(choices, doShuffle, q, indexedChoices){
+  const container = $("choicesText");
+  container.innerHTML = "";
 
-    // ====== State ======
-    let questions = [];
-    let idx = 0;
-    let score = 0;
+  const list = doShuffle ? shuffle([...choices]) : choices;
 
-    // voice
-    let voice = null;
-    let isPlaying = false;
+  list.forEach((text, bi) => {
+    const btn = document.createElement("button");
+    btn.className = "btn btn-choice";
+    btn.innerHTML = renderMarkup(text);
+    btn.dataset.btnIdx = bi;
 
-    // feedback waiting
-    let waitingNext = false;
+    // origIdx: index in q.choices (to compare with answerIdx)
+    const origIdx = indexedChoices ? indexedChoices[bi].origIdx : bi;
+    btn.dataset.origIdx = origIdx;
 
-    function updateHeader(){
-      $("counter").textContent = `${Math.min(idx+1, questions.length)}/${questions.length}`;
-      $("score").textContent = String(score);
-      const pct = questions.length ? (idx / questions.length) * 100 : 0;
-      $("bar").style.width = `${pct}%`;
-    }
-
-    function setPlayButton(){
-      $("playBtn").textContent = isPlaying ? "⏸ Pause" : "▶ Play";
-      $("playHint").style.display = isPlaying ? "inline" : "none";
-    }
-
-    function render(){
-      waitingNext = false;
-      updateHeader();
-
-      const q = questions[idx];
-      $("qText").textContent = q.prompt;
-      $("hint").innerHTML = q.hint ? `Hint: <span class="ans">${escapeHtml(q.hint)}</span>` : "";
-
-      const media = $("media");
-      media.innerHTML = "";
-      if(q.img){
-        const img = document.createElement("img");
-        img.src = q.img;
-        img.alt = "quiz image";
-        img.addEventListener("error", () => { img.remove(); });
-        media.appendChild(img);
-      }
-
-      // set audio
-      stopVoice(); // 前の音を止める
-
-      voice = new Audio(q.audio);
-      voice.preload = "auto";
-      voice.volume = 1.0;
-      voice.loop = true; // Playしたらループ
-
-      // reset play state
-      isPlaying = false;
-      setPlayButton();
-
-      // reset play state
-      try{ voice.pause(); }catch(e){}
-      isPlaying = false;
-      setPlayButton();
-
-      $("answerInput").value = "";
-      $("answerInput").focus();
-
-      $("setTitle").textContent = getParam("title") || "Dictation Quiz";
-    }
-
-    function openFeedback(ok, answerText){
-      stopVoice(); // ★正解/不正解を見せる時は音を止める
-      const ov = $("fbOverlay");
-      ov.classList.add("show");
-      ov.setAttribute("aria-hidden","false");
-
-      $("fbStatus").textContent = ok ? "OK" : "Try again";
-      $("fbImg").src = ok ? FEEDBACK_PNG.correct : FEEDBACK_PNG.wrong;
-      $("fbImg").onerror = () => { $("fbImg").style.display = "none"; }; // 万一無いとき
-      $("fbImg").style.display = "block";
-
-      $("fbAnswer").innerHTML = `Answer: <b>${escapeHtml(answerText)}</b>`;
-
-      waitingNext = true;
-    }
-
-    function closeFeedback(){
-      const ov = $("fbOverlay");
-      ov.classList.remove("show");
-      ov.setAttribute("aria-hidden","true");
-    }
-
-    function next(){
-      closeFeedback();
-      idx++;
-      if(idx >= questions.length){
-        finish();
-      }else{
-        render();
-      }
-    }
-
-    function finish(){
-      $("bar").style.width = "100%";
-
-      const setId = getParam("setId") || "dictation";
-      localStorage.setItem(KEY_SET_ID, setId);
-      localStorage.setItem(KEY_SCORE, String(score));
-      localStorage.setItem(KEY_TOTAL, String(questions.length));
-
-      playSfxByName("done");
-      setTimeout(() => { location.href = RESULT_URL; }, 550);
-    }
-
-    function check(){
-      if(waitingNext) return;
-
-      const q = questions[idx];
-      const user = normalizeAnswer($("answerInput").value);
-      const ans  = normalizeAnswer(q.answer);
-
-      if(!user){
-        openFeedback(false, q.answer);
-        return;
-      }
-
-      const ok = (user === ans);
-      if(ok) score++;
-
-      playSfxByName(ok ? "correct" : "wrong");
-      updateHeader();
-      openFeedback(ok, q.answer);
-    }
-
-    async function togglePlay(){
-      unlockAudioOnce();
-      if(!voice) return;
-
-      if(!isPlaying){
-        try{
-          await voice.play();
-          isPlaying = true;
-          setPlayButton();
-        }catch(e){
-          // blocked → nothing
-        }
-      }else{
-        voice.pause();
-        isPlaying = false;
-        setPlayButton();
-      }
-    }
-
-    // ====== Wire up ======
-    $("playBtn").addEventListener("click", togglePlay);
-    $("checkBtn").addEventListener("click", check);
-    $("skipBtn").addEventListener("click", () => { if(!waitingNext) next(); });
-
-    $("answerInput").addEventListener("keydown", (e) => {
-      if(e.key === "Enter"){
-        // feedback表示中は Enter で Next
-        if(waitingNext) next();
-        else check();
-      }
+    btn.addEventListener("click", ()=>{
+      if(answered) return;
+      // deselect all
+      container.querySelectorAll(".btn-choice").forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedIdx = origIdx;
     });
 
-    $("fbNext").addEventListener("click", next);
-    $("fbClose").addEventListener("click", closeFeedback);
+    container.appendChild(btn);
+  });
 
-    $("exitBtn").addEventListener("click", () => {
-      if(confirm("Exit the quiz?")){
-        location.href = "menu.html";
-      }
+  // For type_1: auto-check on select (single click commits)
+  // For type_2/7: show Check button
+  if(q.type === "q_type_1_listen_only"){
+    // clicking a choice immediately checks
+    container.querySelectorAll(".btn-choice").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        if(!answered && selectedIdx >= 0) checkAnswer(q);
+      });
+    });
+  } else {
+    $("checkBtn").style.display = "inline-block";
+  }
+}
+
+/* --- Type 6: text input --- */
+function renderInput(q){
+  $("inputWrap").style.display = "block";
+  $("checkBtn").style.display  = "inline-block";
+
+  // scroll card into view when keyboard opens (mobile)
+  $("ansInput").addEventListener("focus", ()=>{
+    setTimeout(()=>{ $("ansInput").scrollIntoView({behavior:"smooth", block:"center"}); }, 300);
+  }, {once:true});
+  $("ansInput").focus();
+}
+
+/* --- Image choice selection (type 3) --- */
+function selectImage(i){
+  selectedIdx = i;
+  $("media").querySelectorAll(".img-choice").forEach((img, ii)=>{
+    img.classList.toggle("selected", ii === i);
+  });
+}
+
+/* =========================================================
+   CHECK ANSWER
+   ========================================================= */
+function checkAnswer(q){
+  if(answered) return;
+
+  let ok = false;
+
+  if(q.type === "q_type_6_input"){
+    const userRaw = $("ansInput").value;
+    if(!userRaw.trim()){ $("hintEl").textContent = "まず入力してください。"; return; }
+
+    // accepted answers: choices[0]=kana, [1]=kanji, [2]=romaji
+    const accepted = q.choices;
+    const userNorm = norm(userRaw);
+    ok = accepted.some(a => norm(a) === userNorm);
+
+    // show accepted answers
+    const wrap = $("acceptedWrap");
+    const list = $("acceptedList");
+    list.innerHTML = "";
+    accepted.forEach(a=>{
+      const chip = document.createElement("span");
+      chip.className = "accepted-chip";
+      chip.textContent = a;
+      list.appendChild(chip);
+    });
+    wrap.style.display = "block";
+
+    $("ansInput").className = "input " + (ok ? "correct" : "wrong");
+
+  } else if(q.type === "q_type_3_mcq_image"){
+    if(selectedIdx < 0){ $("hintEl").textContent = "画像を選んでください。"; return; }
+    ok = (selectedIdx === q.answerIdx);
+
+    // highlight images
+    $("media").querySelectorAll(".img-choice").forEach((img, i)=>{
+      if(i === q.answerIdx) img.classList.add("correct");
+      else if(i === selectedIdx && !ok) img.classList.add("wrong");
     });
 
-    // ====== Boot ======
-    (async function boot(){
-      try{
-        const dataPath = getParam("data") || DEFAULT_DATA_PATH;
-        questions = await loadQuestions(dataPath);
-
-        if(!questions.length){
-          $("qText").textContent = "No valid questions found (audio/answer required).";
-          $("hint").textContent = "CSVの audio と answer が入っているか確認してね。";
-          return;
-        }
-
-        idx = 0;
-        score = 0;
-        render();
-      }catch(err){
-        $("qText").textContent = "Failed to load quiz data.";
-        $("hint").textContent = String(err);
-      }
-    })();
-  </script>
-</body>
-</html>
-      --green:#22c55e;
-      --pad:18px;
-    }
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--fg);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", sans-serif;
-    }
-    .wrap{ min-height:100%; display:flex; flex-direction:column; }
-    .topbar{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 16px; border-bottom:1px solid var(--stroke);
-      background:rgba(0,0,0,.55); position:sticky; top:0;
-      backdrop-filter: blur(10px); z-index:5;
-    }
-    .pill{
-      display:inline-flex; align-items:center; gap:10px;
-      padding:10px 12px; border-radius:999px;
-      background:var(--card); border:1px solid var(--stroke);
-      font-size:14px; color:var(--muted);
-    }
-    .pill strong{ color:var(--fg); font-weight:700; }
-
-    .btn{
-      border:1px solid var(--stroke);
-      background:var(--card);
-      color:var(--fg);
-      padding:10px 12px;
-      border-radius:12px;
-      cursor:pointer;
-      user-select:none;
-    }
-    .btn:hover{ border-color: rgba(200,255,46,.55); }
-    .btn-primary{
-      border-color: rgba(200,255,46,.55);
-      box-shadow: 0 0 0 2px rgba(200,255,46,.12) inset;
-    }
-    .btn-primary:hover{
-      box-shadow: 0 0 0 2px rgba(200,255,46,.20) inset, 0 0 18px rgba(200,255,46,.16);
-    }
-
-    .main{ flex:1; padding: var(--pad); display:flex; justify-content:center; }
-    .card{
-      width:min(760px, 100%);
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: 0 18px 60px rgba(0,0,0,.55);
-    }
-
-    .progress{
-      height:10px; background:rgba(255,255,255,.08);
-      border:1px solid var(--stroke); border-radius:999px;
-      overflow:hidden; margin:10px 0 14px;
-    }
-    .progress > div{
-      height:100%; width:0%;
-      background: linear-gradient(90deg, var(--lime), rgba(200,255,46,.45));
-      transition: width .35s ease;
-    }
-
-    .q-title{ font-size:14px; color:var(--muted); margin:0 0 6px; }
-    .q-text{ font-size:22px; line-height:1.45; margin:0 0 14px; word-break:break-word; }
-
-    .media{ display:grid; grid-template-columns: 1fr; gap:12px; margin: 10px 0 14px; }
-    .media img{
-      width:100%; border-radius:16px; border:1px solid var(--stroke);
-      background:rgba(255,255,255,.03); display:block;
-    }
-
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-
-    .input{
-      width:100%; font-size:18px; padding:14px 14px;
-      border-radius:16px; border:1px solid var(--stroke);
-      background:rgba(255,255,255,.06); color:var(--fg); outline:none;
-    }
-    .input:focus{
-      border-color: rgba(200,255,46,.65);
-      box-shadow: 0 0 0 3px rgba(200,255,46,.12);
-    }
-
-    .hint{ margin-top:10px; color:var(--muted); font-size:14px; }
-    .hint .ans{ color: rgba(255,255,255,.9); }
-
-    .small{ font-size:12px; color:rgba(255,255,255,.5); margin-top:10px; }
-    .warn{ color: rgba(255,200,0,.9); }
-
-    /* ===== feedback overlay ===== */
-    .overlay{
-      position:fixed; inset:0;
-      display:none;
-      align-items:center; justify-content:center;
-      background:rgba(0,0,0,.86);
-      z-index:100;
-      padding:18px;
-    }
-    .overlay.show{ display:flex; }
-    .panel{
-      width:min(760px, 100%);
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.06);
-      backdrop-filter: blur(10px);
-      box-shadow:0 18px 50px rgba(0,0,0,.55);
-      padding:16px;
-    }
-    .panelTop{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
-    .panel img{
-      width:min(520px, 100%);
-      height:auto;
-      display:block;
-      margin:10px auto 12px;
-      user-select:none; -webkit-user-drag:none;
-    }
-    .panel .answerLine{
-      font-size:18px;
-      line-height:1.5;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.16);
-      background:rgba(0,0,0,.35);
-      margin:0 0 12px;
-      word-break:break-word;
-    }
-    .panelBtns{ display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
-  </style>
-</head>
-
-<body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="pill"><span>Progress</span><strong id="counter">0/0</strong></div>
-      <div class="pill"><span>Score</span><strong id="score">0</strong></div>
-      <button class="btn" id="exitBtn">Exit</button>
-    </div>
-
-    <div class="main">
-      <div class="card">
-        <div class="progress"><div id="bar"></div></div>
-
-        <p class="q-title" id="setTitle">Dictation Quiz</p>
-        <p class="q-text" id="qText">Loading...</p>
-
-        <div class="media" id="media"></div>
-
-        <div class="row" style="margin-bottom:10px;">
-          <button class="btn btn-primary" id="playBtn">▶ Play</button>
-          <span class="small" id="playHint" style="display:none;">Playing (loop)</span>
-        </div>
-
-        <input class="input" id="answerInput" placeholder="Type what you heard…" autocomplete="off" />
-
-        <div class="row" style="margin-top:12px;">
-          <button class="btn btn-primary" id="checkBtn">Check</button>
-          <button class="btn" id="skipBtn">Skip</button>
-        </div>
-
-        <div class="hint" id="hint"></div>
-        <div class="small warn" id="audioWarn" style="display:none;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- feedback overlay -->
-  <div class="overlay" id="fbOverlay" aria-hidden="true">
-    <div class="panel">
-      <div class="panelTop">
-        <div class="pill"><span>Answer</span><strong id="fbStatus">OK</strong></div>
-        <button class="btn" id="fbClose">×</button>
-      </div>
-
-      <!-- ★ここが「正解・不正解のPNG」 -->
-      <img id="fbImg" src="" alt="feedback" />
-
-      <div class="answerLine" id="fbAnswer"></div>
-
-      <div class="panelBtns">
-        <button class="btn btn-primary" id="fbNext">Next</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ====== Result linkage ======
-    const RESULT_URL = "result.html";
-    const KEY_SET_ID = "JPQ_LAST_SET_ID";
-    const KEY_SCORE  = "JPQ_LAST_SCORE";
-    const KEY_TOTAL  = "JPQ_LAST_TOTAL";
-
-    // ====== Data path ======
-    const DEFAULT_DATA_PATH = "data/dictation.csv";
-    const CACHE_BUST = "v=" + Date.now();
-
-    // ====== repo base (/Hack_JP_quiz/) ======
-    const REPO_BASE = location.pathname.replace(/\/[^\/]*$/, "/");
-
-    // ====== SFX (your existing filenames) ======
-    const SFX = {
-      correct: REPO_BASE + "assets/ui/audio/sfx_pin.mp3",
-      wrong:   REPO_BASE + "assets/ui/audio/sfx_bu.mp3",
-      done:    REPO_BASE + "assets/ui/audio/sfx_applause.mp3",
-    };
-
-    // ====== Feedback PNG (CHANGE HERE if filenames differ) ======
-    const FEEDBACK_PNG = {
-      correct: REPO_BASE + "assets/ui/messages/message-result-pin.png",
-      wrong:   REPO_BASE + "assets/ui/messages/message-result-bu.png",
-    };
-
-    // ====== Audio unlock ======
-    let AUDIO_UNLOCKED = false;
-    function unlockAudioOnce(){
-      if (AUDIO_UNLOCKED) return;
-      AUDIO_UNLOCKED = true;
-      const a = new Audio();
-      a.src = "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAA==";
-      a.volume = 0;
-      a.play().catch(()=>{});
-    }
-    document.addEventListener("pointerdown", unlockAudioOnce, { once: true });
-
-    function playSfxByName(name){
-      unlockAudioOnce();
-      const src = SFX[name];
-      if(!src) return;
-      const a = new Audio(src);
-      a.volume = 0.95;
-      a.play().catch(()=>{});
-    }
-
-    // ====== Helpers ======
-    const $ = (id) => document.getElementById(id);
-    function getParam(name){
-      const u = new URL(location.href);
-      return u.searchParams.get(name);
-    }
-
-    function normalizeAnswer(s){
-      return (s ?? "")
-        .trim()
-        .replace(/\s+/g, "")
-        .replace(/[’‘]/g, "'")
-        .toLowerCase();
-    }
-
-    function escapeHtml(s){
-      return (s ?? "").replace(/[&<>"']/g, (c) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
-    }
-
-    // ====== CSV parser ======
-    function parseCSV(text){
-      const rows = [];
-      let row = [], cur = "", inQ = false;
-      for(let i=0;i<text.length;i++){
-        const ch = text[i];
-        const next = text[i+1];
-
-        if(ch === '"' && inQ && next === '"'){ cur += '"'; i++; continue; }
-        if(ch === '"'){ inQ = !inQ; continue; }
-
-        if(ch === ',' && !inQ){ row.push(cur); cur = ""; continue; }
-        if((ch === '\n' || ch === '\r') && !inQ){
-          if(ch === '\r' && next === '\n') i++;
-          row.push(cur); cur = "";
-          if(row.some(c => (c ?? "").trim() !== "")) rows.push(row);
-          row = [];
-          continue;
-        }
-        cur += ch;
-      }
-      row.push(cur);
-      if(row.some(c => (c ?? "").trim() !== "")) rows.push(row);
-
-      if(rows.length === 0) return [];
-
-      const header = rows[0].map(h => (h ?? "").trim());
-      const out = [];
-      for(let r=1;r<rows.length;r++){
-        const obj = {};
-        for(let c=0;c<header.length;c++){
-          obj[header[c]] = (rows[r][c] ?? "").trim();
-        }
-        out.push(obj);
-      }
-      return out;
-    }
-
-    async function loadQuestions(dataPath){
-      const url = `${dataPath}?${CACHE_BUST}`;
-      const res = await fetch(url);
-      if(!res.ok) throw new Error("Failed to load data: " + url);
-      const text = await res.text();
-      const items = parseCSV(text);
-
-      const questions = items.map(x => ({
-        id: x.id || "",
-        prompt: x.prompt || "Listen",
-        answer: x.answer || "",
-        hint: x.hint || "",
-        img: x.img || "",
-        audio: x.audio || ""
-      }));
-
-      const bad = questions.filter(q => !q.answer || !q.audio);
-      if(bad.length){
-        $("audioWarn").style.display = "block";
-        $("audioWarn").textContent =
-          `⚠ CSVで answer か audio が空欄の行が ${bad.length} 件あります。その行はスキップされます。`;
-      }
-      return questions.filter(q => q.answer && q.audio);
-    }
-
-    // ====== State ======
-    let questions = [];
-    let idx = 0;
-    let score = 0;
-
-    // voice
-    let voice = null;
-    let isPlaying = false;
-
-    // feedback waiting
-    let waitingNext = false;
-
-    function updateHeader(){
-      $("counter").textContent = `${Math.min(idx+1, questions.length)}/${questions.length}`;
-      $("score").textContent = String(score);
-      const pct = questions.length ? (idx / questions.length) * 100 : 0;
-      $("bar").style.width = `${pct}%`;
-    }
-
-    function setPlayButton(){
-      $("playBtn").textContent = isPlaying ? "⏸ Pause" : "▶ Play";
-      $("playHint").style.display = isPlaying ? "inline" : "none";
-    }
-
-    function render(){
-      waitingNext = false;
-      updateHeader();
-
-      const q = questions[idx];
-      $("qText").textContent = q.prompt;
-      $("hint").innerHTML = q.hint ? `Hint: <span class="ans">${escapeHtml(q.hint)}</span>` : "";
-
-      const media = $("media");
-      media.innerHTML = "";
-      if(q.img){
-        const img = document.createElement("img");
-        img.src = q.img;
-        img.alt = "quiz image";
-        img.addEventListener("error", () => { img.remove(); });
-        media.appendChild(img);
-      }
-
-      // set audio
-      voice = new Audio(q.audio);
-      voice.preload = "auto";
-      voice.volume = 1.0;
-      voice.loop = true; // ★押したら永遠にループ
-
-      // reset play state
-      try{ voice.pause(); }catch(e){}
-      isPlaying = false;
-      setPlayButton();
-
-      $("answerInput").value = "";
-      $("answerInput").focus();
-
-      $("setTitle").textContent = getParam("title") || "Dictation Quiz";
-    }
-
-    function openFeedback(ok, answerText){
-      const ov = $("fbOverlay");
-      ov.classList.add("show");
-      ov.setAttribute("aria-hidden","false");
-
-      $("fbStatus").textContent = ok ? "OK" : "Try again";
-      $("fbImg").src = ok ? FEEDBACK_PNG.correct : FEEDBACK_PNG.wrong;
-      $("fbImg").onerror = () => { $("fbImg").style.display = "none"; }; // 万一無いとき
-      $("fbImg").style.display = "block";
-
-      $("fbAnswer").innerHTML = `Answer: <b>${escapeHtml(answerText)}</b>`;
-
-      waitingNext = true;
-    }
-
-    function closeFeedback(){
-      const ov = $("fbOverlay");
-      ov.classList.remove("show");
-      ov.setAttribute("aria-hidden","true");
-    }
-
-    function next(){
-      closeFeedback();
-      idx++;
-      if(idx >= questions.length){
-        finish();
-      }else{
-        render();
-      }
-    }
-
-    function finish(){
-      $("bar").style.width = "100%";
-
-      const setId = getParam("setId") || "dictation";
-      localStorage.setItem(KEY_SET_ID, setId);
-      localStorage.setItem(KEY_SCORE, String(score));
-      localStorage.setItem(KEY_TOTAL, String(questions.length));
-
-      playSfxByName("done");
-      setTimeout(() => { location.href = RESULT_URL; }, 550);
-    }
-
-    function check(){
-      if(waitingNext) return;
-
-      const q = questions[idx];
-      const user = normalizeAnswer($("answerInput").value);
-      const ans  = normalizeAnswer(q.answer);
-
-      if(!user){
-        openFeedback(false, q.answer);
-        return;
-      }
-
-      const ok = (user === ans);
-      if(ok) score++;
-
-      playSfxByName(ok ? "correct" : "wrong");
-      updateHeader();
-      openFeedback(ok, q.answer);
-    }
-
-    async function togglePlay(){
-      unlockAudioOnce();
-      if(!voice) return;
-
-      if(!isPlaying){
-        try{
-          await voice.play();
-          isPlaying = true;
-          setPlayButton();
-        }catch(e){
-          // blocked → nothing
-        }
-      }else{
-        voice.pause();
-        isPlaying = false;
-        setPlayButton();
-      }
-    }
-
-    // ====== Wire up ======
-    $("playBtn").addEventListener("click", togglePlay);
-    $("checkBtn").addEventListener("click", check);
-    $("skipBtn").addEventListener("click", () => { if(!waitingNext) next(); });
-
-    $("answerInput").addEventListener("keydown", (e) => {
-      if(e.key === "Enter"){
-        // feedback表示中は Enter で Next
-        if(waitingNext) next();
-        else check();
-      }
+  } else {
+    // MCQ text / listen / fill
+    if(selectedIdx < 0){ $("hintEl").textContent = "選択肢を選んでください。"; return; }
+    ok = (selectedIdx === q.answerIdx);
+
+    $("choicesText").querySelectorAll(".btn-choice").forEach(btn=>{
+      const oi = Number(btn.dataset.origIdx);
+      if(oi === q.answerIdx) btn.classList.add("correct");
+      else if(oi === selectedIdx && !ok) btn.classList.add("wrong");
     });
+  }
 
-    $("fbNext").addEventListener("click", next);
-    $("fbClose").addEventListener("click", closeFeedback);
+  answered = true;
+  if(ok) score++;
+  $("scoreDisp").textContent = String(score);
+  $("checkBtn").style.display = "none";
 
-    $("exitBtn").addEventListener("click", () => {
-      if(confirm("Exit the quiz?")){
-        location.href = "menu.html";
-      }
+  stopVoice();
+  playSfx(ok ? "correct" : "wrong");
+
+  // show feedback overlay
+  openFeedback(ok, q);
+}
+
+/* =========================================================
+   FEEDBACK OVERLAY
+   ========================================================= */
+function openFeedback(ok, q){
+  $("fbStatus").textContent = ok ? "✓ Correct!" : "✗ Try again";
+  $("fbStatus").style.color = ok ? "var(--green)" : "var(--red)";
+
+  // feedback image
+  const fbImg = $("fbImg");
+  fbImg.src = ok ? FEEDBACK_PNG.correct : FEEDBACK_PNG.wrong;
+  fbImg.style.display = "block";
+  fbImg.onerror = ()=>{ fbImg.style.display="none"; };
+
+  // script / answer
+  const script = $("fbScript");
+  const scriptRaw = q.script_ja || q.script_en;
+  if(scriptRaw){
+    script.innerHTML = renderMarkup(scriptRaw);
+    script.style.display = "block";
+  } else {
+    script.style.display = "none";
+  }
+
+  $("fbOverlay").classList.add("show");
+  $("fbOverlay").setAttribute("aria-hidden","false");
+}
+
+function closeFeedback(){
+  $("fbOverlay").classList.remove("show");
+  $("fbOverlay").setAttribute("aria-hidden","true");
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+function goNext(){
+  closeFeedback();
+  idx++;
+  if(idx >= questions.length){
+    finish();
+  } else {
+    render();
+  }
+}
+
+function skip(){
+  if(answered){ goNext(); return; }
+  // count as wrong, show answer
+  answered = true;
+  stopVoice();
+  const q = questions[idx];
+
+  if(q.type === "q_type_6_input"){
+    $("ansInput").className="input wrong";
+    const wrap=$("acceptedWrap"), list=$("acceptedList");
+    list.innerHTML="";
+    q.choices.forEach(a=>{ const c=document.createElement("span"); c.className="accepted-chip"; c.textContent=a; list.appendChild(c); });
+    wrap.style.display="block";
+  } else if(q.type === "q_type_3_mcq_image"){
+    $("media").querySelectorAll(".img-choice").forEach((img,i)=>{ if(i===q.answerIdx) img.classList.add("correct"); });
+  } else {
+    $("choicesText").querySelectorAll(".btn-choice").forEach(btn=>{
+      if(Number(btn.dataset.origIdx)===q.answerIdx) btn.classList.add("correct");
     });
+  }
 
-    // ====== Boot ======
-    (async function boot(){
-      try{
-        const dataPath = getParam("data") || DEFAULT_DATA_PATH;
-        questions = await loadQuestions(dataPath);
+  $("checkBtn").style.display="none";
+  playSfx("wrong");
+  openFeedback(false, q);
+}
 
-        if(!questions.length){
-          $("qText").textContent = "No valid questions found (audio/answer required).";
-          $("hint").textContent = "CSVの audio と answer が入っているか確認してね。";
-          return;
-        }
+function finish(){
+  $("bar").style.width="100%";
+  const setId = qp("set_id") || "";
+  localStorage.setItem(KEY_SET_ID, setId);
+  localStorage.setItem(KEY_SCORE, String(score));
+  localStorage.setItem(KEY_TOTAL, String(questions.length));
+  playSfx("done");
+  setTimeout(()=>{ location.href=RESULT_URL; }, 550);
+}
 
-        idx = 0;
-        score = 0;
-        render();
-      }catch(err){
-        $("qText").textContent = "Failed to load quiz data.";
-        $("hint").textContent = String(err);
-      }
-    })();
-  </script>
+/* =========================================================
+   WIRE UP
+   ========================================================= */
+$("playBtn").addEventListener("click", toggleVoice);
+$("checkBtn").addEventListener("click", ()=>{ if(!answered) checkAnswer(questions[idx]); });
+$("skipBtn").addEventListener("click", skip);
+$("fbNext").addEventListener("click", goNext);
+$("fbClose").addEventListener("click", closeFeedback);
+
+$("exitBtn").addEventListener("click", ()=>{
+  if(confirm("Exit the quiz?")) location.href="menu.html";
+});
+
+// Enter key behaviour
+document.addEventListener("keydown", e=>{
+  if(e.key !== "Enter") return;
+  if($("fbOverlay").classList.contains("show")){ goNext(); return; }
+  if(!answered) checkAnswer(questions[idx]);
+});
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+(async function boot(){
+  try{
+    questions = loadData();
+    if(!questions.length) throw new Error("有効な問題が見つかりません。");
+    idx=0; score=0;
+    render();
+  }catch(err){
+    $("card").innerHTML = `<div class="state-msg">${esc(String(err))}</div>`;
+  }
+})();
+</script>
 </body>
 </html>
