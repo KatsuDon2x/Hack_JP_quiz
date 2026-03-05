@@ -954,11 +954,77 @@ function renderInput(q){
   };
 }
 
+/* =============================================
+   ROMAJI MATCHING
+   
+   Rules (per spec):
+   - Case insensitive, spaces ignored
+   - Long vowel macrons accepted as alternatives:
+       ā ↔ aa,  ī ↔ ii,  ū ↔ uu,  ē ↔ ei
+       ō ↔ oo   (e.g. ookii ↔ ōkii)
+       ō ↔ ou   (e.g. toukyou ↔ tōkyō)
+   - CRITICAL: ou and oo are NOT interchangeable.
+       ookii → ōkii ✓  but  oukii → ookii ✗
+   
+   Strategy:
+   - Expand user input: replace macrons with their doubled-vowel equivalents.
+     ō is ambiguous (could be oo or ou), so generate BOTH variants.
+   - Then compare each expanded user variant against the CSV candidate
+     (also expanded the same way, to handle CSV entries with macrons).
+   ============================================= */
+
+// Expand one string into all doubled-vowel forms
+// (handles ō ambiguity by branching into oo and ou variants)
+function expandRomaji(raw){
+  // Step 1: lowercase, strip spaces, convert unambiguous macrons
+  let base = (raw||"").toLowerCase().replace(/\s+/g, "")
+    .replace(/ā/g, "aa")
+    .replace(/ī/g, "ii")
+    .replace(/ū/g, "uu")
+    .replace(/ē/g, "ei");
+  // Step 2: ō is ambiguous → branch into oo and ou recursively
+  const variants = new Set();
+  function branch(s){
+    const i = s.indexOf("ō");
+    if(i < 0){ variants.add(s); return; }
+    branch(s.slice(0, i) + "oo" + s.slice(i + 1));
+    branch(s.slice(0, i) + "ou" + s.slice(i + 1));
+  }
+  branch(base);
+  return variants;
+}
+
+// Returns true if userRaw matches csvCandidate under the romaji rules
+function romajiMatch(userRaw, csvCandidate){
+  const userForms = expandRomaji(userRaw);
+  const csvForms  = expandRomaji(csvCandidate);
+  for(const u of userForms){
+    if(csvForms.has(u)) return true;
+  }
+  return false;
+}
+
+// Simple normalize for hiragana/kanji: lowercase + strip spaces
+function normalize(s){ return (s||"").toLowerCase().replace(/\s+/g, ""); }
+
 function checkInput(q){
-  const val = document.getElementById("inputField").value.trim();
-  if(!val) return;
-  const parts = (q.choices_text||"").split("|").map(s => s.trim().toLowerCase()).filter(Boolean);
-  const ok = parts.includes(val.toLowerCase());
+  const raw = document.getElementById("inputField").value.trim();
+  if(!raw) return;
+
+  const parts = (q.choices_text||"").split("|").map(s => s.trim()).filter(Boolean);
+
+  // Detect romaji: ASCII letters + macron vowel chars only
+  const romajiRe = /^[a-zA-Zāīūēō\s\-']+$/;
+  const userIsRomaji = romajiRe.test(raw);
+
+  const ok = parts.some(candidate => {
+    if(userIsRomaji && romajiRe.test(candidate)){
+      return romajiMatch(raw, candidate);
+    }
+    // Hiragana / kanji: case+space insensitive exact match
+    return normalize(raw) === normalize(candidate);
+  });
+
   const qid = q.__qid;
   if(ok && remainingWrong.has(qid)) score++;
   if(ok) remainingWrong.delete(qid); else remainingWrong.add(qid);
@@ -966,8 +1032,6 @@ function checkInput(q){
   const correctHtml = ok ? "" : parts.map(p => `<strong>${escapeHTML(p)}</strong>`).join(" / ");
   showResult(ok, correctHtml);
 }
-
-/* =============================================
    TYPE 4/5 — REORDER
    choices_text (type 4) or image_files (type 5) pipe-delimited;
    correct order = CSV order; user taps chips into answer zone.
